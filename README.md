@@ -1,2 +1,2 @@
-# Turbo Plugin SDK
+# Plugin SDK
 SDK for developing engine plugins
