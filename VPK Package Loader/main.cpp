@@ -108,6 +108,8 @@ Package* LoadPackage(void* data, uint64_t size)
 	//uiMode |= bQuickFileMapping ? HL_MODE_QUICK_FILEMAPPING : 0;
 	//uiMode |= bVolatileAccess ? HL_MODE_VOLATILE : 0;
 
+
+
 	// Open the package.
 	// Of the above modes, only HL_MODE_READ is required.  HL_MODE_WRITE is present
 	// only for future use.  File mapping is recommended as an efficient way to load
@@ -117,7 +119,10 @@ Package* LoadPackage(void* data, uint64_t size)
 	// to find a continues block and will fail to load).  Volatile access allows HLLib
 	// to share files with other applications that have those file open for writing.
 	// This is useful for, say, loading .gcf files while Steam is running.
-	if (!hlPackageOpenMemory(data, size, HL_MODE_READ))
+	
+	auto ss = "C:/Program Files (x86)/Steam/steamapps/common/Half-Life 2/hl2/hl2_textures_dir.vpk";	
+	if (!hlPackageOpenFile(ss, HL_MODE_READ))
+	//if (!hlPackageOpenMemory(data, size, HL_MODE_READ))
 	{
 		return nullptr;
 	}
@@ -151,8 +156,8 @@ void LoadDir(HLDirectoryItem* dir, const std::string& path, Package* pkg)
 	{
 		auto item = hlFolderGetItem(dir, n);
 		auto name = hlItemGetName(item);
-		printf(name);
-		printf("\n");
+		//printf(name);
+		//printf("\n");
 		subpath = path;
 		if (subpath != "") subpath += "/";
 		subpath += name;
@@ -171,8 +176,12 @@ void LoadDir(HLDirectoryItem* dir, const std::string& path, Package* pkg)
 			file.size = size;
 			file.hlitem = item;
 
-			HLStream* pStream = 0;
-			if (!hlFileCreateStream(item, &pStream)) return;
+			auto canextract = hlFileGetExtractable(item);
+
+			int f = 3;
+
+			//HLStream* pStream = 0;
+			//if (!hlFileCreateStream(item, &pStream)) return;
 
 			//if (!hlItemGetSize(item, &size)) continue;
 			//if (size != file.size) printf("SIZE ERROR\n");
@@ -278,12 +287,36 @@ int LoadPackageFile(Package* package, int index, void* data, uint64_t sz)
 		return 0;
 	}
 
-	HLStream* pStream = 0;
-	if (!hlFileCreateStream(item, &pStream)) return 0;
-	//hlStreamRead(pstream, data, sz);
-	hlStreamClose(pStream);
+	if (hlFileGetExtractable(item) == 0)
+	{
+		return 0;
+	}
 
-	return 1;
+	CHAR szPath[MAX_PATH];
+	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA | CSIDL_FLAG_CREATE, NULL, 0, szPath)))
+	{
+		auto loc = std::string(szPath) + "\\VPK Loader";
+		_mkdir(loc.c_str());
+		if (hlItemExtract(item, loc.c_str()) != 0)
+		{ 
+			FILE* file = fopen((loc + "\\" + package->files[index].name).c_str(), "rb");
+			if (file != 0)
+			{
+				fseek(file, 0L, SEEK_END);
+				if (ftell(file) == size)
+				{
+					rewind(file);
+					fread(data, size, 1, file);
+					fclose(file);
+					//remove((loc + "\\" + package->files[index].name).c_str());
+					return 1;
+				}
+			}
+		}
+
+	}
+
+	return 0;
 }
 
 void FreePackage(Package* package)

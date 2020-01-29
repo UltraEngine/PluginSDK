@@ -5,9 +5,12 @@
 #ifdef _WIN32
 	#define WIN32_LEAN_AND_MEAN
 	#include <windows.h>
+	#include <shobjidl_core.h>
+	#include <Shlobj.h>
 #endif
 #include "HLLib/lib/HLLib.h"
 #include "../SDK/Utilities.h"
+#include <direct.h>
 
 #ifdef _WIN32
 	#define DLLExport __declspec( dllexport )
