@@ -71,8 +71,10 @@ int GetPluginInfo(unsigned char* cs, int maxsize)
 	return s.length();
 }
 
-Package* LoadPackage(void* data, uint64_t size)
+Package* LoadPackage(const wchar_t* path)
 {
+	auto spath = GMFSDK::String(path);
+
 	// Check DLL version
 	int version = hlGetUnsignedInteger(HL_VERSION);
 	if (version < HL_VERSION_NUMBER)
@@ -87,7 +89,7 @@ Package* LoadPackage(void* data, uint64_t size)
 	HLDirectoryItem* pItem = 0;
 	
 	// Get package type
-	ePackageType = hlGetPackageTypeFromMemory(data, size);
+	ePackageType = hlGetPackageTypeFromName(spath.c_str());
 	if (ePackageType == HL_PACKAGE_NONE)
 	{
 		return nullptr;
@@ -120,8 +122,8 @@ Package* LoadPackage(void* data, uint64_t size)
 	// to share files with other applications that have those file open for writing.
 	// This is useful for, say, loading .gcf files while Steam is running.
 	
-	auto ss = "C:/Program Files (x86)/Steam/steamapps/common/Half-Life 2/hl2/hl2_textures_dir.vpk";	
-	if (!hlPackageOpenFile(ss, HL_MODE_READ))
+	//auto ss = "C:/Program Files (x86)/Steam/steamapps/common/Half-Life 2/hl2/hl2_textures_dir.vpk";	
+	if (!hlPackageOpenFile(spath.c_str(), HL_MODE_READ))
 	//if (!hlPackageOpenMemory(data, size, HL_MODE_READ))
 	{
 		return nullptr;

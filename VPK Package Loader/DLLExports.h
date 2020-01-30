@@ -39,7 +39,7 @@ extern "C"
 {
 	DLLExport BOOL WINAPI DllMain(_In_ HINSTANCE hinstDLL, _In_ DWORD fdwReason, _In_ LPVOID lpvReserved);
 	DLLExport int GetPluginInfo(unsigned char* cs, int maxsize);
-	DLLExport Package* LoadPackage(void* data, uint64_t size);
+	DLLExport Package* LoadPackage(const wchar_t* path);
 	DLLExport int CountPackageFiles(Package* package);
 	DLLExport int GetPackageFileName(Package* package, const int index, wchar_t* path, int maxsize);
 	DLLExport uint64_t GetPackageFileSize(Package* package, const int index);
