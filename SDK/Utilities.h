@@ -8,8 +8,12 @@
 	#include <codecvt>
 #endif
 
+#include <locale>
+#include <codecvt>
+
 namespace GMFSDK
 {
+	extern std::string String(const std::wstring& s);
 	extern std::wstring StripExt(std::wstring path);
 	extern std::wstring Replace(const std::wstring& s, const std::wstring& from, const std::wstring& to);
 	extern std::wstring StripDir(const std::wstring& path);

@@ -6,7 +6,6 @@
 #include <memory>
 #include "MemWriter.h"
 #include "MemReader.h"
-#include "Utilities.h"
 #include "Half/half.h"
 #ifdef _WIN32
 	#include <Rpc.h>

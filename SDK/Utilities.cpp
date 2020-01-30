@@ -55,6 +55,12 @@ namespace GMFSDK
 		return StripExt(StripDir(path));
 	}
 
+	std::string String(const std::wstring& s)
+	{
+		std::wstring_convert<std::codecvt_utf8<wchar_t> > converter;
+		return converter.to_bytes(s);
+	}
+
 	//Converts a string to a unicode string
 	std::wstring WString(const std::string& s)
 	{
