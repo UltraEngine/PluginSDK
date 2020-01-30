@@ -5,4 +5,4 @@ SDK for developing engine plugins.
 - MD3 model loader loads models from the Quake 3 model format.
 - VTF Loader loads textures from Valve texture format using VTFLib.
 - Particle plugin modifies particle system behavior.
-- VPK package loader allows direct loadng of Source Engine game files.
+- VPK package loader allows direct loading of Source Engine game files.
