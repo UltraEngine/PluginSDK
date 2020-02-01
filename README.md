@@ -6,3 +6,5 @@ SDK for developing engine plugins.
 - VTF Loader loads textures from Valve texture format using VTFLib.
 - Particle plugin modifies particle system behavior.
 - VPK package loader allows direct loading of Source Engine game files.
+## License
+-This code may only be used with Leadwerks Game Engine.
