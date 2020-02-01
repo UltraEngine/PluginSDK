@@ -1,3 +1,4 @@
+![](gameanalytics-logo.png)
 # API Plugin for Game Analytics
 https://www.gameanalytics.com
 
