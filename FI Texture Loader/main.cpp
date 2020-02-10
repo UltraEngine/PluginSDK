@@ -315,20 +315,6 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
 		//format = TEXTURE_RG;
 		//if (compressed) format = TEXTURE_COMPRESSED_RG;
 		break;
-	case 8:
-	case 24:
-		format = VK_FORMAT_R8G8B8_UNORM;
-
-		//Vulkan does not support 24-bits
-		oldbitmap = bitmap;
-		bitmap = FreeImage_ConvertTo32Bits(bitmap);
-		FreeImage_Unload(oldbitmap);
-
-		format = VK_FORMAT_R8G8B8A8_UNORM;
-		bpp = 32;
-		//format = TEXTURE_RGB;
-		//if (compressed) format = TEXTURE_COMPRESSED_RGB;
-		break;
 	case 32:
 		//format = TEXTURE_RGBA;
 		format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -351,9 +337,19 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
 		//format = TEXTURE_RGBA32F;
 		break;
 	default:
-		printf("Error: Unsupported bit depth.");
-		FreeImage_Unload(bitmap);
-		return NULL;
+		format = VK_FORMAT_R8G8B8_UNORM;
+		//Vulkan does not support 24-bits
+		oldbitmap = bitmap;
+		bitmap = FreeImage_ConvertTo32Bits(bitmap);
+		FreeImage_Unload(oldbitmap);
+		format = VK_FORMAT_R8G8B8A8_UNORM;
+		bpp = 32;
+		//format = TEXTURE_RGB;
+		//if (compressed) format = TEXTURE_COMPRESSED_RGB;
+		//break;
+		//printf("Error: Unsupported bit depth (%i).\n", bpp);
+		//FreeImage_Unload(bitmap);
+		//return NULL;
 	}
 
 	FreeImage_FlipVertical(bitmap);
