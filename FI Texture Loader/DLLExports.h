@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "../SDK/GMFSDK.h"
+#include "../SDK/TextureInfo.h"
 #include "FreeImage/FreeImage.h"
 #include "VKFormat.h"
 

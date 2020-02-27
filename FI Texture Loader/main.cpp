@@ -297,7 +297,9 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
 	FreeImage_CloseMemory(mem);
 	if (bitmap == nullptr) return false;
 
-	int format = 0;
+	
+	GMFSDK::TextureInfo texinfo;
+
 	//bool compressed = false;//(TEXTURE_COMPRESSED & flags) != 0;
 
 	int bpp = FreeImage_GetBPP(bitmap);
@@ -311,38 +313,38 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
 		//	break;
 	case 16:
 		//format = VK_FORMAT_R8G8_UNORM;
-		format = VK_FORMAT_R16_UNORM;
+		texinfo.format = VK_FORMAT_R16_UNORM;
 		//format = TEXTURE_RG;
 		//if (compressed) format = TEXTURE_COMPRESSED_RG;
 		break;
 	case 32:
 		//format = TEXTURE_RGBA;
-		format = VK_FORMAT_R8G8B8A8_UNORM;
+		texinfo.format = VK_FORMAT_R8G8B8A8_UNORM;
 		//if (compressed) format = TEXTURE_COMPRESSED_RGBA;
 		break;
 	case 48:
-		format = VK_FORMAT_R16G16B16_SFLOAT;
+		texinfo.format = VK_FORMAT_R16G16B16_SFLOAT;
 		//format = TEXTURE_RGB16F;
 		break;
 	case 64:
-		format = VK_FORMAT_R16G16B16A16_SFLOAT;
+		texinfo.format = VK_FORMAT_R16G16B16A16_SFLOAT;
 		//format = TEXTURE_RGBA16F;
 		break;
 	case 96:
-		format = VK_FORMAT_R32G32B32_SFLOAT;
+		texinfo.format = VK_FORMAT_R32G32B32_SFLOAT;
 		//format = TEXTURE_RGB32F;
 		break;
 	case 128:
-		format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		texinfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
 		//format = TEXTURE_RGBA32F;
 		break;
 	default:
-		format = VK_FORMAT_R8G8B8_UNORM;
+		texinfo.format = VK_FORMAT_R8G8B8_UNORM;
 		//Vulkan does not support 24-bits
 		oldbitmap = bitmap;
 		bitmap = FreeImage_ConvertTo32Bits(bitmap);
 		FreeImage_Unload(oldbitmap);
-		format = VK_FORMAT_R8G8B8A8_UNORM;
+		texinfo.format = VK_FORMAT_R8G8B8A8_UNORM;
 		bpp = 32;
 		//format = TEXTURE_RGB;
 		//if (compressed) format = TEXTURE_COMPRESSED_RGB;
@@ -354,22 +356,17 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
 
 	FreeImage_FlipVertical(bitmap);
 
-	int width = FreeImage_GetWidth(bitmap);
-	int height = FreeImage_GetHeight(bitmap);
-
-	int target = 2;
-	int depth = 1;
-	int lods = 1;
-	int faces = 1;
-
+	texinfo.width = FreeImage_GetWidth(bitmap);
+	texinfo.height = FreeImage_GetHeight(bitmap);
+	
 	//Calculate mipmap count
-	if (Pow2(width) == width and Pow2(height) == height)
+	if (Pow2(texinfo.width) == texinfo.width and Pow2(texinfo.height) == texinfo.height)
 	{
-		lods = 1;
-		int mw = width; int mh = height;
+		texinfo.mipmaps = 1;
+		int mw = texinfo.width; int mh = texinfo.height;
 		while (mw > 1 or mh > 1)
 		{
-			lods++;
+			texinfo.mipmaps++;
 			mw /= 2;
 			mh /= 2;
 		}
@@ -385,26 +382,26 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
 	texinfo.format = format;
 	writer->Write(&texinfo, texinfo.ssize);*/
 
-	std::string tag = "GTF2";
-	int version = 200;
-	writer->Write((void*)tag.c_str(), 4);
+	writer->Write(&texinfo);
+
+	/*writer->Write((void*)tag.c_str(), 4);
 	writer->Write(&version);
 	writer->Write(&format);
 	writer->Write(&target);
 	writer->Write(&width);
 	writer->Write(&height);
 	writer->Write(&depth);
-	writer->Write(&lods);
+	writer->Write(&lods);*/
 	
 	//MipmapInfo mipinfo;
 
 	//Write main image
 	bpp = FreeImage_GetBPP(bitmap) / 8;
-	uint64_t length = bpp * width * height;
-	writer->Write(&width);
-	writer->Write(&height);
-	writer->Write(&depth);
-	writer->Write(&length);
+	//uint64_t length = bpp * width * height;
+	//writer->Write(&width);
+	//writer->Write(&height);
+	//writer->Write(&depth);
+	//writer->Write(&length);
 	auto pixels = FreeImage_GetBits(bitmap);
 	writer->Write(&pixels,sizeof(void*));
 	loadeddata.push_back(bitmap);
@@ -416,29 +413,28 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
 	writer->Write(&mipinfo,mipinfo.ssize);*/
 
 	//Build mipmaps
-	if (Pow2(width) == width and Pow2(height) == height)
+	if (Pow2(texinfo.width) == texinfo.width and Pow2(texinfo.height) == texinfo.height)
 	{
 		int level = 0;
 
 		//Generate mipmaps offline
-		while (width > 1 or height > 1)
+		while (texinfo.width > 1 or texinfo.height > 1)
 		{
 			level++;
-			width /= 2; height /= 2;
-			width = max(1, width); height = max(1, height);
-			auto newbitmap = FreeImage_Rescale(bitmap, width, height, FREE_IMAGE_FILTER::FILTER_BILINEAR);
+			texinfo.width /= 2; texinfo.height /= 2;
+			texinfo.width = max(1, texinfo.width); texinfo.height = max(1, texinfo.height);
+			auto newbitmap = FreeImage_Rescale(bitmap, texinfo.width, texinfo.height, FREE_IMAGE_FILTER::FILTER_BILINEAR);
 			//FreeImage_Unload(bitmap);
 			loadeddata.push_back(newbitmap);
 			bitmap = newbitmap;
 			bpp = FreeImage_GetBPP(bitmap) / 8;
-			length = bpp * width * height;
-			writer->Write(&width);
-			writer->Write(&height);
-			writer->Write(&depth);
-			writer->Write(&length);
+			//length = bpp * texinfo.width * texinfo.height;
+			//writer->Write(&width);
+			//writer->Write(&height);
+			//writer->Write(&depth);
+			//writer->Write(&length);
 			pixels = FreeImage_GetBits(bitmap);
 			writer->Write(&pixels, sizeof(void*));
-
 			/*mipinfo.width = width;
 			mipinfo.height = height;
 			mipinfo.datasize = length;
@@ -446,7 +442,6 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
 			writer->Write(&mipinfo,mipinfo.ssize);*/
 		}
 	}
-
 	size_out = writer->Size();
 	return writer->data();
 }
