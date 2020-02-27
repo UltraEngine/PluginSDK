@@ -135,10 +135,12 @@
   <ItemGroup>
     <ClCompile Include="..\SDK\MemReader.cpp" />
     <ClCompile Include="..\SDK\MemWriter.cpp" />
+    <ClCompile Include="..\SDK\TextureInfo.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SDK\MemWriter.h" />
+    <ClInclude Include="..\SDK\TextureInfo.h" />
     <ClInclude Include="..\SDK\Utilities.h" />
     <ClInclude Include="DLLExports.h" />
     <ClInclude Include="FreeImage\Dist\x64\FreeImage.h" />

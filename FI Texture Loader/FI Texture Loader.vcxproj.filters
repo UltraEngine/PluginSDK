@@ -39,6 +39,9 @@
     <ClCompile Include="..\SDK\MemReader.cpp">
       <Filter>Source Files\GMFSDK</Filter>
     </ClCompile>
+    <ClCompile Include="..\SDK\TextureInfo.cpp">
+      <Filter>Source Files\GMFSDK</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DLLExports.h">
@@ -55,6 +58,9 @@
     </ClInclude>
     <ClInclude Include="FreeImage\Dist\x64\FreeImage.h">
       <Filter>Header Files\FreeImage</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SDK\TextureInfo.h">
+      <Filter>Header Files\GMFSDK</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
