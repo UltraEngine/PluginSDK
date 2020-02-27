@@ -36,6 +36,9 @@
     <ClCompile Include="..\SDK\MemWriter.cpp">
       <Filter>Source Files\GMFSDK</Filter>
     </ClCompile>
+    <ClCompile Include="..\SDK\TextureInfo.cpp">
+      <Filter>Source Files\GMFSDK</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DLLExports.h">
@@ -52,6 +55,9 @@
     </ClInclude>
     <ClInclude Include="Vulkan\VKFormat.h">
       <Filter>Header Files\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SDK\TextureInfo.h">
+      <Filter>Header Files\GMFSDK</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

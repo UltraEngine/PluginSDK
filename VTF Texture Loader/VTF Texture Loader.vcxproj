@@ -71,7 +71,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>VTF</TargetName>
-    <OutDir>..\..\..\..\Documents\Leadwerks\Projects\Turbo Project\Plugins</OutDir>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>VTF</TargetName>
@@ -133,10 +133,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\SDK\MemWriter.cpp" />
+    <ClCompile Include="..\SDK\TextureInfo.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SDK\MemWriter.h" />
+    <ClInclude Include="..\SDK\TextureInfo.h" />
     <ClInclude Include="..\SDK\Utilities.h" />
     <ClInclude Include="DLLExports.h" />
     <ClInclude Include="VTFLib\VTFLib.h" />
