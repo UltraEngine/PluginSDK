@@ -79,11 +79,11 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
 		return nullptr;
 	}
 
-	int width = vlImageGetWidth();
-	int height = vlImageGetHeight();
-	int depth = vlImageGetDepth();
-	int format = 0;
-	int target = 2;// 2D texture
+	GMFSDK::TextureInfo texinfo;
+
+	texinfo.width = vlImageGetWidth();
+	texinfo.height = vlImageGetHeight();
+	texinfo.depth = vlImageGetDepth();
 	bool convert = false;
 
 	auto vtfformat = vlImageGetFormat();
@@ -91,29 +91,29 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
 	switch (vtfformat)
 	{
 	case IMAGE_FORMAT_RGBA8888:
-		format = VK_FORMAT_R8G8B8A8_UNORM;	
+		texinfo.format = VK_FORMAT_R8G8B8A8_UNORM;
 	case IMAGE_FORMAT_BGRA8888:
-		format = VK_FORMAT_B8G8R8A8_UNORM;
+		texinfo.format = VK_FORMAT_B8G8R8A8_UNORM;
 		break;
 	case IMAGE_FORMAT_DXT1:
-		format = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+		texinfo.format = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
 		break;
 	case IMAGE_FORMAT_DXT1_ONEBITALPHA:
-		format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+		texinfo.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
 		break;
 	case IMAGE_FORMAT_DXT3:
-		format = VK_FORMAT_BC2_UNORM_BLOCK;
+		texinfo.format = VK_FORMAT_BC2_UNORM_BLOCK;
 		break;
 	case IMAGE_FORMAT_DXT5:
-		format = VK_FORMAT_BC3_UNORM_BLOCK;
+		texinfo.format = VK_FORMAT_BC3_UNORM_BLOCK;
 		break;
 	default:
-		format = VK_FORMAT_R8G8B8A8_UNORM;
+		texinfo.format = VK_FORMAT_R8G8B8A8_UNORM;
 		convert = true;
 		break;
 	}
 
-	if (depth > 1) target = 3;// 3D texture
+	if (texinfo.depth > 1) texinfo.target = 3;// 3D texture
 	int faces = vlImageGetFaceCount();
 	if (faces != 1 && faces != 6)
 	{
@@ -122,57 +122,43 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
 	}
 	if (faces == 6)
 	{
-		target = 4;// cubemap
-		if (depth > 1)
+		texinfo.target = 4;// cubemap
+		if (texinfo.depth > 1)
 		{
 			vlImageDestroy();
 			return nullptr;
 		}
 	}
 
-	int lods = vlImageGetMipmapCount();
+	texinfo.mipmaps = vlImageGetMipmapCount();
 	
 	writer = new MemWriter;
-	std::string tag = "GTF2";
-	int version = 200;
-	writer->Write((void*)tag.c_str(), 4);
-	writer->Write(&version);
-	writer->Write(&format);
-	writer->Write(&target);
-	writer->Write(&width);
-	writer->Write(&height);
-	writer->Write(&depth);
-	writer->Write(&lods);
+	writer->Write(&texinfo);
 
 	for (int f = 0; f < faces; ++f)
 	{
-		for (int n = 0; n < lods; ++n)
+		for (int n = 0; n < texinfo.mipmaps; ++n)
 		{
-			writer->Write(&width);
-			writer->Write(&height);
-			writer->Write(&depth);
-			
-			uint64_t mipsize = vlImageComputeMipmapSize(width, height, depth, 0, vlImageGetFormat());
-			if (convert) mipsize = width * height * 4;
-			writer->Write(&mipsize);
+			uint64_t mipsize = vlImageComputeMipmapSize(texinfo.width, texinfo.height, texinfo.depth, 0, vlImageGetFormat());
+			if (convert) mipsize = texinfo.width * texinfo.height * 4;
 
-			for (int z = 0; z < depth; ++z)
+			for (int z = 0; z < texinfo.depth; ++z)
 			{
 				auto pixels = vlImageGetData(0, f, z, n);
 				if (convert)
 				{
 					auto datasize = LoadData.size();
 					LoadData.resize(datasize + mipsize);
-					vlImageConvertToRGBA8888(pixels, LoadData.data() + datasize, width, height, vlImageGetFormat());
+					vlImageConvertToRGBA8888(pixels, LoadData.data() + datasize, texinfo.width, texinfo.height, vlImageGetFormat());
 					pixels = LoadData.data() + datasize;
 				}
 				//writer->Write(pixels, mipsize);
 				writer->Write(&pixels, sizeof(void*));
 			}
 
-			if (width > 1) width /= 2;
-			if (height > 1) height /= 2;
-			if (depth > 1) depth /= 2;
+			if (texinfo.width > 1) texinfo.width /= 2;
+			if (texinfo.height > 1) texinfo.height /= 2;
+			if (texinfo.depth > 1) texinfo.depth /= 2;
 		}
 	}
 
