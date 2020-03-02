@@ -3,6 +3,10 @@
 
 using namespace GMFSDK;
 
+MemWriter* writer = nullptr;
+std::vector<FIBITMAP*> loadeddata;
+std::vector<FIMEMORY*> loadedmem;
+
 //DLL entry point function
 #ifdef _WIN32
 BOOL WINAPI DllMain(_In_ HINSTANCE hinstDLL, _In_ DWORD fdwReason, _In_ LPVOID lpvReserved)
@@ -36,10 +40,10 @@ int GetPluginInfo(unsigned char* cs, int maxsize)
 			"\"author\":\"Josh Klint\","
 			"\"url\":\"www.turboengine.com\","
 			"\"extension\": [\"bmp\",\"jpg\",\"jpeg\",\"tga\",\"pcx\",\"tga\",\"gif\"],"
+			"\"saveextensions\": [\"bmp\",\"jpg\",\"jpeg\",\"tga\",\"tga\"],"
 			"\"filter\": [\"Portable Network Graphics (*.png):png\",\"Windows Bitmap (*bmp):bmp\"]"
 		"}"
 	"}";
-
 	if (maxsize > 0) memcpy(cs, s.c_str(), min(maxsize,s.length() ) );
 	return s.length();
 }
@@ -65,8 +69,76 @@ public:
 	unsigned char psize, attbits;
 };
 
-MemWriter* writer = nullptr;
-std::vector<FIBITMAP*> loadeddata;
+//Save raw pixel data to image
+void* SavePixmap(int width, int height, int format, void* pixels, uint64_t size, wchar_t* extension, uint64_t& returnsize)
+{
+	FREE_IMAGE_FORMAT fiformat = FREE_IMAGE_FORMAT::FIF_UNKNOWN;
+	int rmask= 0xff0000, gmask= 0x00ff00, bmask= 0x0000ff, bpp=0;
+	void* returndata = NULL;
+
+	std::wstring ext = extension;
+
+	if (ext == L"bmp") fiformat = FIF_BMP;
+	if (ext == L"psd") fiformat = FIF_PSD;
+	if (ext == L"png") fiformat = FIF_PNG;
+	if (ext == L"tga") fiformat = FIF_TARGA;
+	if (ext == L"jpg" or extension == L"jpeg") fiformat = FIF_JPEG;
+
+	if (fiformat == FIF_UNKNOWN) return NULL;
+
+	switch (format)
+	{
+	case VK_FORMAT_R8G8B8A8_UNORM:
+		bpp = 4;
+		break;
+	case VK_FORMAT_R8G8B8_UNORM:
+		bpp = 3;
+		break;
+	case VK_FORMAT_B8G8R8A8_UNORM:
+		rmask = 0x0000ff;
+		bmask = 0xff0000;
+		bpp = 4;
+		break;
+	case VK_FORMAT_B8G8R8_UNORM:
+		rmask = 0x0000ff;
+		bmask = 0xff0000;
+		bpp = 3;
+		break;
+	case VK_FORMAT_R16_UNORM:
+		rmask = 0xff0000;
+		gmask = 0x000000;
+		bmask = 0x000000;
+		bpp = 2;
+		break;
+	default:
+		return NULL;
+		break;
+	}
+
+	FIBITMAP* bitmap = FreeImage_ConvertFromRawBits((BYTE*)pixels, width, height, width * bpp, bpp*8, rmask, gmask, bmask, 0);
+	FIMEMORY* mem = FreeImage_OpenMemory();
+
+	if (FreeImage_SaveToMemory(fiformat,bitmap, mem, 0) == 0)
+	{
+		FreeImage_Unload(bitmap);
+		FreeImage_CloseMemory(mem);
+		return NULL;
+	}
+
+	FreeImage_Unload(bitmap);
+
+	BYTE* mem_buffer = NULL;
+	DWORD size_in_bytes = 0;
+	FreeImage_AcquireMemory(mem, &mem_buffer, &size_in_bytes);
+	returnsize = size_in_bytes;
+
+	//FreeImage_SeekMemory(mem, 0, SEEK_END);
+	//returnsize = FreeImage_TellMemory(mem);
+	
+	loadedmem.push_back(mem);
+
+	return mem_buffer;
+}
 
 //Texture load function
 void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
@@ -297,7 +369,6 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
 	FreeImage_CloseMemory(mem);
 	if (bitmap == nullptr) return false;
 
-	
 	GMFSDK::TextureInfo texinfo;
 
 	//bool compressed = false;//(TEXTURE_COMPRESSED & flags) != 0;
@@ -455,4 +526,9 @@ void Cleanup()
 		FreeImage_Unload(bm);
 	}
 	loadeddata.clear();
+	for (auto& mem : loadedmem)
+	{
+		FreeImage_CloseMemory(mem);
+	}
+	loadedmem.clear();
 }
