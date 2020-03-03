@@ -1,5 +1,5 @@
 # Basis Texture Plugin
-This adds support for .basis texture files:
+This adds support for loading and saving .basis texture files:
 
 https://github.com/BinomialLLC/basis_universal
 
