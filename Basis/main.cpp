@@ -25,6 +25,8 @@ using namespace basist;
 MemWriter* writer = nullptr;
 basisu_transcoder* transcoder = nullptr;
 std::vector<void*> allocedmem;
+basis_compressor* compressor = NULL;
+basist::etc1_global_selector_codebook* sel_codebook = nullptr;
 
 //DLL entry point function
 #ifdef _WIN32
@@ -34,6 +36,7 @@ BOOL WINAPI DllMain(_In_ HINSTANCE hinstDLL, _In_ DWORD fdwReason, _In_ LPVOID l
 	{
 	case DLL_PROCESS_ATTACH:
 		basisu_encoder_init();
+		sel_codebook = new etc1_global_selector_codebook(basist::g_global_selector_cb_size, basist::g_global_selector_cb);
 		writer = nullptr;
 		break;
 	case DLL_PROCESS_DETACH:
@@ -55,6 +58,8 @@ void Cleanup()
 	writer = nullptr;
 	delete transcoder;
 	transcoder = nullptr;
+	delete compressor;
+	compressor = nullptr;
 	for (auto levelData : allocedmem)
 	{
 		free(levelData);
@@ -74,8 +79,8 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsiz
 	reader.Read(&tag);
 	if (tag != 17011) return nullptr; // should start with "sB"
 
-	basist::etc1_global_selector_codebook sel_codebook(basist::g_global_selector_cb_size, basist::g_global_selector_cb);
-	transcoder = new basisu_transcoder(&sel_codebook);
+	//basist::etc1_global_selector_codebook sel_codebook(basist::g_global_selector_cb_size, basist::g_global_selector_cb);
+	transcoder = new basisu_transcoder(sel_codebook);
 	bool success = transcoder->start_transcoding(data, size);
 	if (!success) return nullptr;
 
@@ -110,6 +115,20 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsiz
 	for (int n = 0; n < imageCount; ++n)
 	{
 		transcoder->get_image_info(data, size, imageInfo, n);
+		
+		if (imageInfo.m_alpha_flag)
+		{
+			switch (format)
+			{
+			case transcoder_texture_format::cTFBC1_RGB:
+				format = transcoder_texture_format::cTFBC3_RGBA;
+				break;
+			case transcoder_texture_format::cTFBC7_M6_RGB:
+				format = transcoder_texture_format::cTFBC7_M5_RGBA;
+				break;
+			}
+		}
+
 		if (n == 0)
 		{
 			texinfo.width = imageInfo.m_width;
@@ -140,6 +159,7 @@ void* LoadTexture(void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsiz
 			texinfo.format = VK_FORMAT_BC5_UNORM_BLOCK;
 			break;
 		//BC7
+		case transcoder_texture_format::cTFBC7_M6_RGB:
 		case transcoder_texture_format::cTFBC7_M5_RGBA:
 			texinfo.format = VK_FORMAT_BC7_UNORM_BLOCK;
 			break;
@@ -220,48 +240,47 @@ int GetPluginInfo(unsigned char* cs, int maxsize)
 //Texture load function
 void* SavePixmap(int width, int height, int format, void* pixels, uint64_t size, wchar_t* extension, uint64_t& returnsize)
 {
-	return nullptr;// not working
+	//return nullptr;// not working
 
 	if (format != VK_FORMAT_R8G8B8A8_UNORM) return nullptr;
 	if (wstring(extension) != L"basis") return nullptr;
 
-	image img = image(width, height);
-	char* thing = (char*)pixels;
-	img.set_all(basisu::color_rgba(*thing));
-
-	basis_compressor_params params;
-	params.m_source_images.push_back(img);
-	params.m_mip_gen = 0;// true;
-	params.m_check_for_alpha = true;
+	image img(width, height);
+	memcpy(img.get_ptr(), pixels, width * height * 4);
 	
-	params.m_max_endpoint_clusters = 1;
-	params.m_max_selector_clusters = 1;
-	
-	params.m_multithreading = false;// true;
-	//int num_threads = std::thread::hardware_concurrency();
-	//if (num_threads < 1) num_threads = 1;
-	//job_pool jpool(num_threads);
-	//params.m_pJob_pool = &jpool;
+	basis_compressor_params m_comp_params;
+	m_comp_params.m_source_images.push_back(img);
+	m_comp_params.m_mip_gen = true;
+	m_comp_params.m_check_for_alpha = true;
+	m_comp_params.m_quality_level = 128;
+	 
+	m_comp_params.m_multithreading = true;
+	int num_threads = std::thread::hardware_concurrency();
+	if (num_threads < 1) num_threads = 1;
+	job_pool jpool(num_threads);
+	m_comp_params.m_pJob_pool = &jpool;
 
-	//params.m_userdata0 = BASIS_HINT_FORMAT;
-	//params.m_userdata1 = ;
+	//basist::etc1_global_selector_codebook sel_codebook(basist::g_global_selector_cb_size, basist::g_global_selector_cb);
+	m_comp_params.m_pSel_codebook = sel_codebook;
+	m_comp_params.m_write_output_basis_files = false;
+	//m_comp_params.m_out_filename = "test.basis";
 
-	basist::etc1_global_selector_codebook sel_codebook(basist::g_global_selector_cb_size, basist::g_global_selector_cb);
-	params.m_pSel_codebook = &sel_codebook;
-
-	basis_compressor c;
-
-	if (!c.init(params))
+	compressor = new basis_compressor;
+	if (!compressor->init(m_comp_params))
 	{
 		error_printf("basis_compressor::init() failed!\n");
 		return nullptr;
 	}
 
-	basis_compressor::error_code ec = c.process();
+	basis_compressor::error_code ec = compressor->process();
 
 	if (ec == basis_compressor::cECSuccess)
 	{
-		printf("Compression succeeded to file \"%s\"\n", params.m_out_filename.c_str());
+		printf("Compression succeeded to file \"%s\"\n", m_comp_params.m_out_filename.c_str());
+
+		auto data = compressor->m_basis_file.get_compressed_data();
+		returnsize = data.size();
+		return &data[0];
 	}
 	else
 	{
