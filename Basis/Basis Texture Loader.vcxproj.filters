@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\GMFSDK">
+      <UniqueIdentifier>{925b84cc-32be-42da-b266-5773a2d843b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GMFSDK">
+      <UniqueIdentifier>{fcc57160-0d33-49f9-b17a-5af37aba35ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Vulkan">
+      <UniqueIdentifier>{6d0abd6a-b418-41b1-8067-50be24cb8d80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Basis">
+      <UniqueIdentifier>{f95ee2d6-9647-4e82-9204-9ab112519a3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Basis\transcoder">
+      <UniqueIdentifier>{718cd2f8-d888-4180-bf41-ccf79b5e065c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\basis">
+      <UniqueIdentifier>{44275088-d2b3-4084-888c-691659617169}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\basis\transcoder">
+      <UniqueIdentifier>{911a016d-5f7e-466a-b536-c7e7b7d4a1b0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDK\MemWriter.cpp">
+      <Filter>Source Files\GMFSDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDK\TextureInfo.cpp">
+      <Filter>Source Files\GMFSDK</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_tool.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\lodepng.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_astc_decomp.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_backend.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_basis_file.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_comp.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_enc.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_etc.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_frontend.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_global_selector_palette_helpers.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_gpu_texture.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_pvrtc1_4.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_resample_filters.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_resampler.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\basisu_ssim.cpp">
+      <Filter>Source Files\Basis</Filter>
+    </ClCompile>
+    <ClCompile Include="basis\transcoder\basisu_transcoder.cpp">
+      <Filter>Source Files\Basis\transcoder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDK\MemReader.cpp">
+      <Filter>Source Files\GMFSDK</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DLLExports.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SDK\MemWriter.h">
+      <Filter>Header Files\GMFSDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SDK\Utilities.h">
+      <Filter>Header Files\GMFSDK</Filter>
+    </ClInclude>
+    <ClInclude Include="Vulkan\VKFormat.h">
+      <Filter>Header Files\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SDK\TextureInfo.h">
+      <Filter>Header Files\GMFSDK</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\basisu_astc_decomp.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\basisu_backend.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\basisu_basis_file.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\basisu_comp.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\basisu_enc.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\basisu_etc.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\basisu_frontend.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\basisu_global_selector_palette_helpers.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\basisu_gpu_texture.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\basisu_pvrtc1_4.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\basisu_resampler.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\basisu_resampler_filters.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\basisu_ssim.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\lodepng.h">
+      <Filter>Header Files\basis</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\transcoder\basisu_global_selector_cb.h">
+      <Filter>Header Files\basis\transcoder</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\transcoder\basisu_global_selector_palette.h">
+      <Filter>Header Files\basis\transcoder</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\transcoder\basisu_transcoder.h">
+      <Filter>Header Files\basis\transcoder</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\transcoder\basisu_transcoder_internal.h">
+      <Filter>Header Files\basis\transcoder</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\transcoder\basisu.h">
+      <Filter>Header Files\basis\transcoder</Filter>
+    </ClInclude>
+    <ClInclude Include="basis\transcoder\basisu_file_headers.h">
+      <Filter>Header Files\basis\transcoder</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
