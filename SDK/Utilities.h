@@ -10,9 +10,12 @@
 
 #include <locale>
 #include <codecvt>
+#include <sstream>
 
 namespace GMFSDK
 {
+	extern std::string String(const float f);
+	extern std::string String(const int i);
 	extern std::string String(const std::wstring& s);
 	extern std::wstring StripExt(std::wstring path);
 	extern std::wstring Replace(const std::wstring& s, const std::wstring& from, const std::wstring& to);

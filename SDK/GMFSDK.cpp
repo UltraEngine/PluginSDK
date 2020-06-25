@@ -455,13 +455,19 @@ namespace GMFSDK
 			int indicesize = 4;
 			
 			//Read vertices
-			mesh->vertexdata = (char*)reader->data() + reader->Pos();
+			mesh->vertexdata = (char*)reader->data() + reader->Pos();			
+			mesh->vertices.resize(mesh->vertexcount);
+			if (mesh->vertexcount) memcpy(mesh->vertices.data(), mesh->vertexdata, sizeof(mesh->vertices[0]) * mesh->vertices.size());
+			
 			reader->Seek(reader->Pos() + mesh->vertexcount * sizeof(GMFVertex));
 
 			reader->Read(&mesh->indicecount);
 
 			//Read indices
 			mesh->indicedata = (char*)reader->data() + reader->Pos();
+			mesh->indices.resize(mesh->indicecount);
+			if (mesh->indicecount) memcpy(mesh->indices.data(), mesh->indicedata, sizeof(mesh->indices[0]) * mesh->indices.size());
+
 			reader->Seek(reader->Pos() + mesh->indicecount * indicesize);
 
 			//Read pick structure

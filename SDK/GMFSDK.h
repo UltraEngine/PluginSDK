@@ -7,6 +7,7 @@
 #include "MemWriter.h"
 #include "MemReader.h"
 #include "Half/half.h"
+#include "TextureInfo.h"
 #ifdef _WIN32
 	#include <Rpc.h>
 #endif

@@ -2,6 +2,21 @@
 
 namespace GMFSDK
 {
+	std::string String(const float f) {
+		std::stringstream out;
+		out << f;
+		auto s = out.str();
+		if (s.find(".") == -1) s += ".0";
+		return s;
+	}
+
+	std::string String(const int i)
+	{
+		std::stringstream out;
+		out << i;
+		return out.str();
+	}
+
 	//Removes the file extension from a path
 	std::wstring StripExt(std::wstring path)
 	{
