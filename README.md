@@ -1,4 +1,4 @@
-# Plugin SDK
+# Ultra Engine Plugin SDK
 SDK for developing engine plugins.
 ## Sample Plugins
 - FI Texture Loader loads textures from various image formats using the FreeImage library.
