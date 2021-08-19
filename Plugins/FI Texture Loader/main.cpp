@@ -423,12 +423,12 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 		//format = TEXTURE_RG;
 		//if (compressed) format = TEXTURE_COMPRESSED_RG;
 		break;
-	case 24:
+	/*case 24:
 		//format = TEXTURE_RGBA;
 		texinfo.format = VK_FORMAT_R8G8B8_UNORM;
 		if (FreeImage_GetBlueMask(bitmap) == 0x0000ff) texinfo.format = VK_FORMAT_B8G8R8_UNORM;
 		//if (compressed) format = TEXTURE_COMPRESSED_RGBA;
-		break;
+		break;*/
 	case 32:
 		//format = TEXTURE_RGBA;
 		texinfo.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -451,6 +451,7 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 		texinfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
 		//format = TEXTURE_RGBA32F;
 		break;
+	case 24:
 	default:
 		texinfo.format = VK_FORMAT_R8G8B8_UNORM;
 		//Vulkan does not support 24-bits
@@ -510,6 +511,9 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 
 	//Write main image
 	bpp = FreeImage_GetBPP(bitmap) / 8;
+
+	auto pitch = FreeImage_GetPitch(bitmap);
+
 	//uint64_t length = bpp * width * height;
 	//writer->Write(&width);
 	//writer->Write(&height);
