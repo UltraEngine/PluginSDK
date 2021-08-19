@@ -1,0 +1,13 @@
+{
+    "makefile.extensionOutputFolder": "./.vscode",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/josh/Desktop/Ultra Engine/Plugins/FI Texture Loader/Library/Linux",
+            "binaryPath": "/home/josh/Desktop/Ultra Engine/Plugins/FI Texture Loader/Library/Linux/AppKit.o",
+            "binaryArgs": []
+        }
+    ],
+    "files.associations": {
+        "string": "cpp"
+    }
+}
