@@ -2,6 +2,13 @@
 
 namespace GMFSDK
 {
+	std::string ExtractExt(const std::string& path)
+	{
+		size_t p = path.find_last_of(".");
+		if (p != -1) return path.substr(p + 1);
+		return "";
+	}
+
 	std::string String(const float f) {
 		std::stringstream out;
 		out << f;

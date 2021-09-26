@@ -14,6 +14,7 @@
 
 namespace GMFSDK
 {
+	extern std::string ExtractExt(const std::string& path);
 	extern std::string String(const float f);
 	extern std::string String(const int i);
 	extern std::string String(const std::wstring& s);
