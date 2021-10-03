@@ -1,3 +1,3 @@
 # VTF Texture Loader
 
-This plugin loads images from Valve Texture Format files.
+This plugin loads images from Valve texture and material files.
