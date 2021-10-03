@@ -288,8 +288,11 @@ void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uin
 	}
 	glod->AddMesh(mesh);
 
-	if (!file->Save(&context->writer)) return NULL;
+	//------------------------------------------------------------------------
+	// Write model data to transfer format in memory
+	//------------------------------------------------------------------------
 
+	if (!file->Save(&context->writer)) return NULL;
 	size_out = context->writer.Size();
 	return context->writer.data();
 }
