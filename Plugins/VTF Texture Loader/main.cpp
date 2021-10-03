@@ -1,7 +1,4 @@
-#include "../../Source/Libraries/PluginSDK/MemWriter.h"
-#include "../../Source/Libraries/PluginSDK/Utilities.h"
 #include "DLLExports.h"
-#include "VTFLib/VTFLib.h"
 #include "VKFormat.h"
 
 using namespace GMFSDK;
@@ -40,6 +37,8 @@ int GetPluginInfo(unsigned char* cs, int maxsize)
 			"\"threadSafe\":false,"
 			"\"saveTextureExtensions\": [\"vtf\"],"
 			"\"loadTextureExtensions\": [\"vtf\"],"
+			"\"saveMaterialExtensions\": [\"vmt\"],"
+			"\"loadMaterialExtensions\": [\"vmt\"],"
 			"\"saveTextureFilter\": [\"Valve Texture Format (*.vtf):vtf\"],"
 			"\"loadTextureFilter\": [\"Valve Texture Format (*.vtf):vtf\"]"
 		"}"
@@ -48,11 +47,57 @@ int GetPluginInfo(unsigned char* cs, int maxsize)
 	return s.length();
 }
 
-MemWriter* writer = nullptr;
-//std::vector<unsigned char> LoadData;
+Context::Context()
+{
+	writer = NULL;
+	mtl = 0;
+	materialbound = false;
+}
 
 //Texture load function
-void* LoadTexture(Context*, void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
+void* LoadMaterial(Context* context, void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
+{
+	nlohmann::json j3;
+	j3["material"] = nlohmann::json::object();
+	j3["material"]["textures"] = nlohmann::json::array();
+	for (int n = 0; n < 16; ++n)
+	{
+		j3["material"]["textures"].push_back(nlohmann::json::object());
+	}
+
+	if (!vlCreateMaterial(&context->mtl)) return NULL;
+	context->materialbound = vlBindMaterial(context->mtl);
+	if (!context->materialbound) return NULL;
+	//std::wstring path = std::wstring(cpath);
+	//std::string s = String(path);
+	//s = Replace(s,"/","\\");
+	if (!vlMaterialLoadLump(data, size)) return NULL;
+//	 return NULL;
+
+	auto nodevalid = vlMaterialGetFirstNode();
+	while (nodevalid)
+	{
+		auto key = std::string(vlMaterialGetNodeName());
+		if (key == "$basetexture")
+		{
+			auto value = std::string(vlMaterialGetNodeString());
+			j3["material"]["textures"][0]["file"] = "materials/" + value + ".vtf";
+		}
+		if (key == "$bumpmap")
+		{
+			auto value = std::string(vlMaterialGetNodeString());
+			j3["material"]["textures"][1]["file"] = "materials/" + value + ".vtf";
+		}
+		nodevalid = vlMaterialGetNextNode();
+	}
+
+	context->materialstring = j3.dump(1, '	');
+	size_out = context->materialstring.size();
+	return (void*)context->materialstring.c_str();
+}
+
+//Texture load function
+void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, uint64_t& size_out)
 {
 	vlUInt img = 0;
 	const int MAGIC_VTF = 4609110;
@@ -144,8 +189,8 @@ void* LoadTexture(Context*, void* data, uint64_t size, wchar_t* cpath, uint64_t&
 
 	texinfo.mipmaps = vlImageGetMipmapCount();
 	
-	writer = new MemWriter;
-	writer->Write(&texinfo);
+	context->writer = new MemWriter;
+	context->writer->Write(&texinfo);
 
 	for (int f = 0; f < faces; ++f)
 	{
@@ -171,8 +216,8 @@ void* LoadTexture(Context*, void* data, uint64_t size, wchar_t* cpath, uint64_t&
 				}
 				//writer->Write(pixels, mipsize);
 				int i = mipsize;
-				writer->Write(&i,sizeof(int));
-				writer->Write(&pixels, sizeof(void*));
+				context->writer->Write(&i,sizeof(int));
+				context->writer->Write(&pixels, sizeof(void*));
 			}
 			if (texinfo.width > 1) texinfo.width /= 2;
 			if (texinfo.height > 1) texinfo.height /= 2;
@@ -181,8 +226,8 @@ void* LoadTexture(Context*, void* data, uint64_t size, wchar_t* cpath, uint64_t&
 	}
 
 	//vlImageDestroy();
-	size_out = writer->Size();
-	return writer->data();
+	size_out = context->writer->Size();
+	return context->writer->data();
 }
 
 void* SaveTexture(Context* context, wchar_t* extension, const int type, const int width, const int height, const int format, void** mipchain, int* sizechain, const int mipcount, const int layers, uint64_t& returnsize, int flags)
@@ -258,26 +303,28 @@ void* SaveTexture(Context* context, wchar_t* extension, const int type, const in
 
 	vlImageSaveLump(NULL, 0, &sz);
 
-	writer = new MemWriter;
-	writer->Resize(sz);
-	if (!vlImageSaveLump(writer->data(), writer->Size(), &sz))
+	context->writer = new MemWriter;
+	context->writer->Resize(sz);
+	if (!vlImageSaveLump(context->writer->data(), context->writer->Size(), &sz))
 	{
 		vlImageDestroy();
 		return NULL;
 	}
 	vlImageDestroy();
-	return writer->data();
+	return context->writer->data();
 }
 
 Context* CreateContext()
 {
-	return NULL;
+	return new Context;
 }
 
-void FreeContext(Context*)
+void FreeContext(Context* context)
 {
-	delete writer;
-	writer = NULL;
+	delete context->writer;
+	context->writer = NULL;
+	vlMaterialDestroy();
 	//LoadData.clear();
 	vlImageDestroy();
+	delete context;
 }
