@@ -191,21 +191,14 @@ void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uin
 					for (int n5 = 0; n5 < meshheader.numStripGroups; ++n5)
 					{
 						auto stripgroupoffset = meshoffset + meshheader.stripGroupHeaderOffset + n5 * sizeof(StripGroupHeader_t);
-						//vxtreader.Seek(stripgroupoffset);
-						//StripGroupHeader_t stripgroup;
-						//vxtreader.Read(&stripgroup);
-						//vxtreader.Seek(stripgroupoffset + stripgroup.indexOffset);
-						//auto ic = indices.size();
-						//indices.resize(ic + stripgroup.numIndices);
-						//vxtreader.Read(&indices[ic], sizeof(unsigned short) * stripgroup.numIndices);
-						
-						const int index = n5;
-						const int index2 = vtxDataView.getUint16(stripGroup.indexDataStart + index * 2, true);
-						const int index3 = vtxDataView.getUint16(stripGroup.vertexDataStart + index2 * 9 + 4, true);
-						const int index4 = mesh.vertexoffset + index3;
-						const int index5 = index4 + model.vertexindex / 48;
-						
-						goto out;
+						vxtreader.Seek(stripgroupoffset);
+						StripGroupHeader_t stripgroup;
+						vxtreader.Read(&stripgroup);
+						vxtreader.Seek(stripgroupoffset + stripgroup.indexOffset);
+						auto ic = indices.size();
+						indices.resize(ic + stripgroup.numIndices);
+						vxtreader.Read(&indices[ic], sizeof(unsigned short) * stripgroup.numIndices);
+						goto out; // let's keep it simple for testing...
 					}
 				}
 			}
@@ -275,11 +268,14 @@ void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uin
 		}
 	}
 	
+	//------------------------------------------------------------------------
+	// Construct the data structure to return
+	//------------------------------------------------------------------------	
+	
 	auto file = new GMFFile();
 	auto root = new GMFNode(file, GMF_TYPE_MODEL);
 	auto glod = root->AddLOD();
 	auto mesh = new GMFMesh(file, 3);
-	//vertices = meshvertices;
 	for (int v = 0; v < vertices.size(); ++v)
 	{
 		mesh->AddVertex(vertices[v].m_vecPosition.x, vertices[v].m_vecPosition.y, vertices[v].m_vecPosition.z, vertices[v].m_vecNormal.x, vertices[v].m_vecNormal.y, vertices[v].m_vecNormal.z, vertices[v].m_vecTexCoord.x, vertices[v].m_vecTexCoord.y);
