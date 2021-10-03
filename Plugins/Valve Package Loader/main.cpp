@@ -82,6 +82,69 @@ void SetPrintFunction(void func(std::wstring&))
 	func(s);
 }
 
+
+void AddFiles(HLDirectoryItem* item, std::vector<std::wstring>& files)
+{
+	int filecount = hlFolderGetFolderCount(item, false);;
+	auto count = hlFolderGetFileCount(item, false) + filecount;
+	std::string file;
+	char cp[4096];
+	//auto sz = files.size();
+	//files.resize(sz + filecount);
+	files.reserve(files.size() + filecount);
+	//int i = 0;
+	for (int n = 0; n < count; ++n)
+	{
+		auto subitem = hlFolderGetItem(item, n);
+		switch (hlItemGetType(subitem))
+		{
+		case HL_ITEM_FOLDER:
+			AddFiles(subitem, files);
+			continue;
+		}
+		hlItemGetPath(subitem, cp, 4096);
+		file = std::string(&cp[0]);
+		//files[sz + i] = GMFSDK::WString(file);
+		files.push_back(GMFSDK::WString(file));
+		//++i;
+	}
+}
+
+int ListFiles(Package* pak)
+{
+	pak->loadedfiles.clear();
+	hlBindPackage(pak->hlpak);
+	auto item = hlPackageGetRoot();
+	if (item == NULL) return 0;
+	AddFiles(item, pak->loadedfiles);
+	return pak->loadedfiles.size();
+}
+
+int PackageValid(const wchar_t* path)
+{
+	auto spath = GMFSDK::String(path);
+
+	// Get package type
+	auto ePackageType = hlGetPackageTypeFromName(spath.c_str());
+
+	if (ePackageType == HL_PACKAGE_VPK)
+	{
+		//Detect "_XXX.vpk" naming scheme
+		if (spath.size() > 7)
+		{
+			char c[4];
+			c[3] = 0;
+			c[2] = spath[spath.size() - 5];
+			c[1] = spath[spath.size() - 6];
+			c[0] = spath[spath.size() - 7];
+			std::string s = "1" + std::string(c);
+			auto i = atoi(s.c_str());
+			if (GMFSDK::String(i) == s) return 0;
+		}
+	}
+	return 1;
+}
+
 Package* LoadPackage(const wchar_t* path)
 {
 	auto spath = GMFSDK::String(path);
@@ -209,6 +272,8 @@ int GetPackageFileName(HLDirectoryItem* item, wchar_t* path, int maxsize)
 {
 	return 0;
 }
+
+
 
 int GetPackageFileType(HLDirectoryItem* item)
 {

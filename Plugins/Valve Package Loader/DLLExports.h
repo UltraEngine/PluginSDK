@@ -52,5 +52,6 @@ extern "C"
 	DLLExport wchar_t* GetLoadedFile(Package* pak, const int index);
 	DLLExport int FileType(Package* pak, wchar_t* path);
 	DLLExport uint64_t FileSize(Package* pak, wchar_t* path);
-	DLLExport int FoldersSupported(Package* pak);
+	DLLExport int ListFiles(Package* pak);
+	DLLExport int PackageValid(const wchar_t* path);
 }
