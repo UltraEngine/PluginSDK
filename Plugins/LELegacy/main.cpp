@@ -1,4 +1,3 @@
-#include "../../Source/Libraries/PluginSDK/MemWriter.h"
 #include "DLLExports.h"
 #include "VKFormat.h"
 #include <algorithm>
@@ -7,9 +6,6 @@
 using namespace GMFSDK;
 using namespace std;
 
-MemWriter* writer = nullptr;
-std::vector<void*> allocedmem;
-
 //DLL entry point function
 #ifdef _WIN32
 BOOL WINAPI DllMain(_In_ HINSTANCE hinstDLL, _In_ DWORD fdwReason, _In_ LPVOID lpvReserved)
@@ -17,7 +13,6 @@ BOOL WINAPI DllMain(_In_ HINSTANCE hinstDLL, _In_ DWORD fdwReason, _In_ LPVOID l
 	switch (fdwReason)
 	{
 	case DLL_PROCESS_ATTACH:
-		writer = nullptr;
 		break;
 	case DLL_PROCESS_DETACH:
 		break;
@@ -37,11 +32,14 @@ int GetPluginInfo(unsigned char* cs, int maxsize)
 	std::string s =
 		"{"
 		"\"plugin\":{"
-		"\"title\":\"Support for legacy Leadwerks Engine formats.\","
-		"\"description\":\"Load Leadwerks Engine TEX files.\","
+		"\"title\":\"Leadwerks Engine File Formats\","
+		"\"description\":\"Load Leadwerks Engine models, materials, and textures.\","
 		"\"author\":\"Josh Klint\","
+		"\"threadSafe\":true,"
+		"\"loadModelExtensions\":[\"mdl\"],"
+		"\"loadTextureExtensions\":[\"tex\"],"
+		"\"loadMaterialExtensions\":[\"mat\"],"
 		"\"url\":\"www.leadwerks.com\","
-		"\"extension\": [\"tex\"],"
 		"\"filter\": [\"Leadwerks 4 Texture (*.tex):tex\"]"
 		"}"
 		"}";
@@ -51,15 +49,18 @@ int GetPluginInfo(unsigned char* cs, int maxsize)
 	return std::min(s.length(), maxsize_);
 }
 
-void FreeContext(void*)
+Context* CreateContext()
 {
-	delete writer;
-	writer = nullptr;
-	for (auto levelData : allocedmem)
+	return new Context;
+}
+
+void FreeContext(Context* ctx)
+{
+	for (auto mem : ctx->allocedmem)
 	{
-		free(levelData);
+		free(mem);
 	}
-	allocedmem.clear();
+	delete ctx;
 }
 
 const int LE_TEXTURE_RGBA8 = 1;
@@ -69,13 +70,56 @@ const int LE_TEXTURE_RGBDXTC1 = 8;
 const int LE_TEXTURE_RGBADXTC3 = 5;
 const int LE_TEXTURE_RGBADXTC5 = 6;
 const int LE_TEXTURE_RGBADXT5N = 20;
-
 const int LE_TEXTURE_1D = 1;
 const int LE_TEXTURE_2D = 2;
 const int LE_TEXTURE_3D = 3;
 const int LE_TEXTURE_CUBEMAP = 4;
 
-void* LoadTexture(void* context, void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsize)
+void* LoadMaterial(Context* context, void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsize)
+{
+	if (size < 25) return NULL;
+
+	MemReader reader(data, size);
+	//if (Lower(reader.ReadString(25)) != "//leadwerks material file") return NULL;
+
+	auto s = Lower(reader.ReadLine());
+	if (s.find("leadwerks material file") == -1) return NULL;
+
+	nlohmann::json j3;
+	j3["material"] = nlohmann::json::object();
+	j3["material"]["textures"] = nlohmann::json::array();
+
+	for (int n = 0; n < 16; ++n)
+	{
+		j3["material"]["textures"].push_back(nlohmann::json::object());
+	}
+
+	while (reader.Pos() < reader.Size())
+	{
+		auto s = reader.ReadLine();
+		auto p = Find(s, "//");
+		if (p != -1) s = Right(s, s.size() - p - 1);
+		p = Find(s, "=");
+		if (p != -1)
+		{
+			auto key = Left(s, p);
+			auto value = Right(s, s.size() - p - 1);
+			if (key == "texture0")
+			{
+				j3["material"]["textures"][0]["file"] = Replace(value,"\"","");
+			}
+			else if (key == "texture1")
+			{
+				j3["material"]["textures"][1]["file"] = Replace(value, "\"", "");
+			}
+		}
+	}
+	context->materialinfo = j3.dump(1, '	');
+	returnsize = context->materialinfo.size();
+	return (void*)context->materialinfo.c_str();
+}
+
+void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsize)
 {
 	if (size < 8) return NULL;
 
@@ -159,8 +203,7 @@ void* LoadTexture(void* context, void* data, uint64_t size, wchar_t* cpath, uint
 	reader.Read(&texinfo.frames);
 	reader.Read(&texinfo.mipmaps);
 
-	writer = new MemWriter();
-	writer->Write(&texinfo);
+	context->writer.Write(&texinfo);
 
 	int mw, mh, sz;
 	//for (int k = 0; k < texinfo.frames; ++k)// not ever used / supported
@@ -178,14 +221,13 @@ void* LoadTexture(void* context, void* data, uint64_t size, wchar_t* cpath, uint
 					printf("Error: Failed to allocate memory of size %i.\n", sz);
 					return nullptr;
 				}
-				allocedmem.push_back(memblock);
+				context->allocedmem.push_back(memblock);
 				reader.Read(memblock, sz);
-				writer->Write(&memblock, sizeof(void*));
+				context->writer.Write(&memblock, sizeof(void*));
 			}
 		}
 	//}
 
-	returnsize = writer->Size();
-	return writer->data();
+	returnsize = context->writer.Size();
+	return context->writer.data();
 }
-

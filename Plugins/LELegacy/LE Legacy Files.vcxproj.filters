@@ -36,6 +36,9 @@
     <ClCompile Include="..\..\Source\Libraries\PluginSDK\TextureInfo.cpp">
       <Filter>Source Files\PluginSDK</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\Libraries\PluginSDK\Utilities.cpp">
+      <Filter>Source Files\PluginSDK</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DLLExports.h">

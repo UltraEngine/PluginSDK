@@ -72,10 +72,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>LELegacy</TargetName>
-    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>..\..\..\..\..\Documents\Ultra Engine\Plugins</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>LELegacy</TargetName>
+    <OutDir>..\..\..\..\..\Documents\Ultra Engine\Plugins</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -137,6 +138,7 @@
     <ClCompile Include="..\..\Source\Libraries\PluginSDK\MemReader.cpp" />
     <ClCompile Include="..\..\Source\Libraries\PluginSDK\MemWriter.cpp" />
     <ClCompile Include="..\..\Source\Libraries\PluginSDK\TextureInfo.cpp" />
+    <ClCompile Include="..\..\Source\Libraries\PluginSDK\Utilities.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
