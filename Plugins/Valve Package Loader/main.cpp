@@ -32,6 +32,7 @@ Package::Package()
 	file = NULL;
 	hlpak = -1;
 	isquakewad = false;
+	isquakebsp = false;
 }
 
 //DLL entry point function
@@ -209,6 +210,80 @@ Package* QLoadPackage(const wchar_t* cpath)
 	return pak;
 }
 
+Package* QReadBSP(const wchar_t* cpath, void* data, uint64_t sz)
+{
+	const int LUMP_TEXTURES = 2;
+	/*#define LUMP_ENTITIES      0
+	#define LUMP_PLANES        1
+	#define LUMP_TEXTURES      2
+	#define LUMP_VERTICES      3
+	#define LUMP_VISIBILITY    4
+	#define LUMP_NODES         5
+	#define LUMP_TEXINFO       6
+	#define LUMP_FACES         7
+	#define LUMP_LIGHTING      8
+	#define LUMP_CLIPNODES     9
+	#define LUMP_LEAVES       10
+	#define LUMP_MARKSURFACES 11
+	#define LUMP_EDGES        12
+	#define LUMP_SURFEDGES    13
+	#define LUMP_MODELS       14
+	#define HEADER_LUMPS      15*/
+	Package* pak = new Package;
+	pak->isquakewad = true;
+	pak->isquakebsp = true;
+	uint32_t nMipTextures;
+	int BSPMIPTEXOFFSET;
+	MemReader reader(data, sz);
+	int version = 0;
+	reader.Read(&version);
+	if (version != 29)
+	{
+		return NULL; 
+	}
+	reader.Seek(4 + (LUMP_TEXTURES) * 8);
+
+	uint32_t lumpoffset, lumpsize;
+
+	reader.Read(&lumpoffset);
+	reader.Read(&lumpsize);
+
+	reader.Seek(lumpoffset);
+	reader.Read(&nMipTextures);
+	_BSPMIPTEX tex;
+	for (int n = 0; n < nMipTextures; ++n)
+	{
+		reader.Seek(lumpoffset + 4 + n * 4);
+		reader.Read(&BSPMIPTEXOFFSET);
+		if (BSPMIPTEXOFFSET == -1) continue; // this can and does happen!
+		reader.Seek(BSPMIPTEXOFFSET+ lumpoffset);
+		reader.Read(&tex);
+		if (tex.nOffsets[0] == 0) continue; // texture stored in WAD, use name to find it
+		lumpinfo_t lump = {};
+		lump.filepos = tex.nOffsets[0];
+		lump.size = tex.nWidth * tex.nHeight + 16;
+		memcpy(&lump.name, tex.szName, 16);
+		lump.disksize = 8 + tex.nWidth * tex.nHeight * 1;
+		pak->fileindex[WString(std::string(lump.name))] = pak->lumps.size();
+		pak->lumps.push_back(lump);
+
+		BSPTexture btex = {};
+		btex.width = tex.nWidth;
+		btex.name = std::string(tex.szName);
+		btex.height = tex.nHeight;
+		btex.offset = tex.nOffsets[0]+ BSPMIPTEXOFFSET + lumpoffset;
+		btex.size = tex.nWidth * tex.nHeight + 8;
+		pak->textures.push_back(btex);
+
+		reader.Seek(BSPMIPTEXOFFSET + lumpoffset + tex.nOffsets[0]);
+		char c[4];
+		reader.Read(c, 4);
+		int d = 3;
+		//tex.nOffsets[0];
+	}
+	return pak;
+}
+
 Package* QReadPackage(const wchar_t* cpath, void* data, uint64_t sz)
 {
 	MemReader reader(data, sz);
@@ -222,7 +297,7 @@ Package* QReadPackage(const wchar_t* cpath, void* data, uint64_t sz)
 
 	if (header.identification[0] != 'W' or header.identification[1] != 'A' or header.identification[2] != 'D' or header.identification[3] != '2')
 	{
-		return NULL;
+		return QReadBSP(cpath, data, sz);
 	}
 
 	auto wad_numlumps = header.numlumps;
@@ -372,13 +447,25 @@ HLDirectoryItem* GetPackageRoot(Package* package)
 
 int QLoadDir(Package* pak, wchar_t* path, int types)
 {
-	for (int n = 0; n < pak->lumps.size(); ++n)
+	pak->loadedfiles.clear();
+	if (pak->isquakebsp)
 	{
-		std::string s = std::string(pak->lumps[n].name);
-		std::wstring file = WString(s);
-		pak->loadedfiles.push_back(file);
+		for (int n = 0; n < pak->textures.size(); ++n)
+		{
+			pak->loadedfiles.push_back(WString(pak->textures[n].name));
+		}
+		return pak->lumps.size();
 	}
-	return pak->lumps.size();
+	else
+	{
+		for (int n = 0; n < pak->lumps.size(); ++n)
+		{
+			std::string s = std::string(pak->lumps[n].name);
+			std::wstring file = WString(s);
+			pak->loadedfiles.push_back(file);
+		}
+		return pak->lumps.size();
+	}
 }
 
 wchar_t* QGetLoadedFile(Package* pak, const int index)
@@ -403,7 +490,14 @@ uint64_t QFileSize(Package* pak, wchar_t* path)
 	std::wstring s = std::wstring(path);
 	auto it = pak->fileindex.find(s);
 	if (it == pak->fileindex.end()) return 0;
-	return pak->lumps[it->second].size;
+	if (pak->isquakebsp)
+	{
+		return pak->textures[it->second].size;
+	}
+	else
+	{
+		return pak->lumps[it->second].size;
+	}
 }
 
 int QReadStream(Package* pak, wchar_t* path, void* data, uint64_t sz)
@@ -411,22 +505,38 @@ int QReadStream(Package* pak, wchar_t* path, void* data, uint64_t sz)
 	std::wstring s = std::wstring(path);
 	auto it = pak->fileindex.find(s);
 	if (it == pak->fileindex.end()) return 0;
-	if (pak->file)
+	if (pak->isquakebsp)
 	{
-		fseek(pak->file, pak->lumps[it->second].filepos, 0);
-		fread(data, pak->lumps[it->second].size, 1, pak->file);
+		const auto& tex = pak->textures[it->second];
+		if (pak->file)
+		{
+			memcpy((char*)data + 0, &tex.width, 4);
+			memcpy((char*)data + 4, &tex.height, 4);
+			fseek(pak->file, tex.offset, 0);
+			fread((char*)data + 8, tex.width * tex.height, 1, pak->file);
+		}
+		else
+		{
+			memcpy((char*)data + 0, &tex.width, 4);
+			memcpy((char*)data + 4, &tex.height, 4);
+			memcpy((char*)data + 8, (char*)pak->membuffer + tex.offset, tex.width * tex.height);
+		}
+		return 1;
 	}
 	else
 	{
-		MemReader reader(pak->membuffer,pak->memsize);
-		reader.Seek(pak->lumps[it->second].filepos);
-		reader.Read(data, pak->lumps[it->second].size);
+		if (pak->file)
+		{
+			fseek(pak->file, pak->lumps[it->second].filepos, 0);
+			fread(data, pak->lumps[it->second].size, 1, pak->file);
+		}
+		else
+		{
+			MemReader reader(pak->membuffer, pak->memsize);
+			reader.Seek(pak->lumps[it->second].filepos);
+			reader.Read(data, pak->lumps[it->second].size);
+		}
 	}
-	char c[5];
-	c[4] = 0;
-	memcpy(c, data, 4);
-	std::string ss = std::string(c);
-
 	return 1;
 }
 
@@ -481,6 +591,7 @@ int LoadDir(Package* pak, wchar_t* cpath, int types)
 		{
 		case HL_PACKAGE_WAD:
 		case HL_PACKAGE_BSP:
+		case HL_PACKAGE_VBSP:
 			return 0;
 		}
 	}
@@ -495,8 +606,8 @@ int LoadDir(Package* pak, wchar_t* cpath, int types)
 	char cp[4096];
 	pak->loadedfiles.clear();
 
-	//Maybe this is an old Quake WAD file...
-	if (count == 0 and ExtractExt(cpath) == L"wad")
+	//Maybe this is an old Quake WAD or BSP file...
+	if (count == 0 and (ExtractExt(cpath) == L"wad" or ExtractExt(cpath) == L"bsp"))
 	{
 		auto sz = FileSize(pak,cpath);
 		void* mem = malloc(sz);
@@ -516,14 +627,23 @@ int LoadDir(Package* pak, wchar_t* cpath, int types)
 	for (int n = 0; n < count; ++n)
 	{
 		auto subitem = hlFolderGetItem(item, n);
-		switch (hlItemGetType(subitem))
+		auto name = std::string(hlItemGetName(subitem));
+		auto ext = ExtractExt(name);
+		if (ext == "bsp" or ext == "vbsp" or ext == "wad")
 		{
-		case HL_ITEM_FILE:
-			if (!findfiles) continue;
-			break;
-		case HL_ITEM_FOLDER:
-			if (!findfolders) continue;
-			break;
+			//continue;
+		}
+		else
+		{
+			switch (hlItemGetType(subitem))
+			{
+			case HL_ITEM_FILE:
+				if (!findfiles) continue;
+				break;
+			case HL_ITEM_FOLDER:
+				if (!findfolders) continue;
+				break;
+			}
 		}
 		//hlItemGetPath(item, cp, 4096);
 		//std::string path = std::string(cp);

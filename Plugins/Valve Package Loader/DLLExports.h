@@ -22,6 +22,14 @@
 
 //----------------------------------------------
 // Quake stuff
+#define MAXTEXTURENAME 16
+#define MIPLEVELS 4
+typedef struct _BSPMIPTEX
+{
+	char szName[MAXTEXTURENAME];  // Name of texture
+	uint32_t nWidth, nHeight;     // Extends of the texture
+	uint32_t nOffsets[MIPLEVELS]; // Offsets to texture mipmaps BSPMIPTEX;
+} BSPMIPTEX;
 
 #define	CMP_NONE		0
 #define	CMP_LZSS		1
@@ -71,9 +79,18 @@ struct PackageFile
 	uint64_t size;
 };
 
+struct BSPTexture
+{
+	int width, height;
+	void* data;
+	std::string name;
+	uint32_t offset, size;
+};
+
 struct Package
 {
 	bool isquakewad;
+	bool isquakebsp;
 	hlUInt hlpak;
 	HLPackageType type;
 	std::vector<std::wstring> loadedfiles;
@@ -85,6 +102,7 @@ struct Package
 	std::map<std::wstring, Package*> quakesubpackages;
 	void* membuffer;
 	uint64_t memsize;
+	std::vector<BSPTexture> textures;
 
 	Package();
 };
