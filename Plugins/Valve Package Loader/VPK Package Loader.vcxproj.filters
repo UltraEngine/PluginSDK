@@ -7,6 +7,9 @@
     <ClCompile Include="..\..\Source\Libraries\PluginSDK\Utilities.cpp">
       <Filter>Source\SDK</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\PluginSDK\MemReader.cpp">
+      <Filter>Source\SDK</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DLLExports.h">

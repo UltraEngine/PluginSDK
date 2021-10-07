@@ -134,6 +134,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\PluginSDK\MemReader.cpp" />
     <ClCompile Include="..\..\Source\Libraries\PluginSDK\Utilities.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

@@ -26,6 +26,14 @@ extern "C"
 	}
 }
 
+Package::Package()
+{
+	membuffer = NULL;
+	file = NULL;
+	hlpak = -1;
+	isquakewad = false;
+}
+
 //DLL entry point function
 #ifdef _WIN32
 BOOL WINAPI DllMain(_In_ HINSTANCE hinstDLL, _In_ DWORD fdwReason, _In_ LPVOID lpvReserved)
@@ -81,7 +89,6 @@ void SetPrintFunction(void func(std::wstring&))
 	std::wstring s = L"TEST";
 	func(s);
 }
-
 
 void AddFiles(HLDirectoryItem* item, std::vector<std::wstring>& files)
 {
@@ -145,6 +152,101 @@ int PackageValid(const wchar_t* path)
 	return 1;
 }
 
+Package* QLoadPackage(const wchar_t* cpath)
+{
+	std::wstring path = std::wstring(cpath);
+	wadinfo_t header;
+	MemReader reader(&header, sizeof(wadinfo_t));
+	lumpinfo_t lump;
+
+	//if (Lower(RIght(path,3)) != L"wad") return NULL;
+
+	FILE* file = _wfopen(cpath, L"rb");
+
+	fread(&header, sizeof(header), 1, file);
+
+	if (header.identification[0] != 'W' or header.identification[1] != 'A' or header.identification[2] != 'D' or header.identification[3] != '2')
+	{
+		fclose(file);
+		return NULL;
+	}
+
+	auto wad_numlumps = header.numlumps;
+	auto infotableofs = header.infotableofs;
+	//auto wad_lumps = (lumpinfo_t*)(wad_base + infotableofs);
+
+	Package* pak = new Package;
+	pak->isquakewad = true;
+	std::wstring wadfile;
+
+	fseek(file, header.infotableofs, 0);
+
+	for (int i = 0; i < wad_numlumps; i++)
+	{
+		fread(&lump, sizeof(lump), 1, file);
+		pak->lumps.push_back(lump);
+		wadfile = WString(std::string(lump.name));
+		//if (lump.compression) continue;
+		//switch (lump.type)
+		//{
+		//case TYP_QTEX:
+		//case TYP_MIPTEX:
+		//case TYP_QPIC:
+			//(String(lump.type).c_str());
+		pak->fileindex[wadfile] = pak->files.size();
+		pak->files.push_back(wadfile);
+		//	break;
+		//}
+		//	lump_p->filepos = lump_p.filepos;
+		//	lump_p->size = lump_p.size;
+			//W_CleanupName(lump_p->name, lump_p->name);
+			//if (lump_p.type == TYP_QPIC)
+			//	SwapPic((qpic_t*)(wad_base + lump_p->filepos));
+
+	}
+	pak->info = header;
+	pak->file = file;
+	return pak;
+}
+
+Package* QReadPackage(const wchar_t* cpath, void* data, uint64_t sz)
+{
+	MemReader reader(data, sz);
+
+	wadinfo_t header;
+	lumpinfo_t lump;
+
+	//if (Lower(RIght(path,3)) != L"wad") return NULL;
+
+	reader.Read(&header, sizeof(header));
+
+	if (header.identification[0] != 'W' or header.identification[1] != 'A' or header.identification[2] != 'D' or header.identification[3] != '2')
+	{
+		return NULL;
+	}
+
+	auto wad_numlumps = header.numlumps;
+	auto infotableofs = header.infotableofs;
+	//auto wad_lumps = (lumpinfo_t*)(wad_base + infotableofs);
+
+	Package* pak = new Package;
+	pak->isquakewad = true;
+	std::wstring wadfile;
+	
+	reader.Seek(header.infotableofs);
+
+	for (int i = 0; i < wad_numlumps; i++)
+	{
+		reader.Read(&lump, sizeof(lump));
+		pak->lumps.push_back(lump);
+		wadfile = WString(std::string(lump.name));
+		pak->fileindex[wadfile] = pak->files.size();
+		pak->files.push_back(wadfile);
+	}
+	pak->info = header;
+	return pak;
+}
+
 Package* LoadPackage(const wchar_t* path)
 {
 	auto spath = GMFSDK::String(path);
@@ -192,14 +294,14 @@ Package* LoadPackage(const wchar_t* path)
 		//}
 		if (ePackageType == HL_PACKAGE_NONE)
 		{
-			return NULL;
+			return QLoadPackage(path);
 		}
 	}
 
 	// Create
 	if (!hlCreatePackage(ePackageType, &uiPackage))
 	{
-		return NULL;
+		return QLoadPackage(path);
 	}
 
 	// Bind package
@@ -226,7 +328,7 @@ Package* LoadPackage(const wchar_t* path)
 	//if (!hlPackageOpenMemory(data, size, HL_MODE_READ))
 	{
 		hlDeletePackage(uiPackage);
-		return NULL;
+		return QLoadPackage(path);
 	}
 
 	// If we have a .ncf file, the package file data is stored externally.  In order to
@@ -268,12 +370,70 @@ HLDirectoryItem* GetPackageRoot(Package* package)
 	return NULL;
 }*/
 
+int QLoadDir(Package* pak, wchar_t* path, int types)
+{
+	for (int n = 0; n < pak->lumps.size(); ++n)
+	{
+		std::string s = std::string(pak->lumps[n].name);
+		std::wstring file = WString(s);
+		pak->loadedfiles.push_back(file);
+	}
+	return pak->lumps.size();
+}
+
+wchar_t* QGetLoadedFile(Package* pak, const int index)
+{
+	if (index < 0 or index >= pak->files.size())
+	{
+		return NULL;
+	}
+	const auto& s = pak->files[index];
+	return (wchar_t*)s.c_str();
+}
+
+int QFileType(Package* pak, wchar_t* path)
+{
+	std::wstring s = std::wstring(path);
+	if (pak->fileindex.find(s) == pak->fileindex.end()) return 0;
+	return 1;
+}
+
+uint64_t QFileSize(Package* pak, wchar_t* path)
+{
+	std::wstring s = std::wstring(path);
+	auto it = pak->fileindex.find(s);
+	if (it == pak->fileindex.end()) return 0;
+	return pak->lumps[it->second].size;
+}
+
+int QReadStream(Package* pak, wchar_t* path, void* data, uint64_t sz)
+{
+	std::wstring s = std::wstring(path);
+	auto it = pak->fileindex.find(s);
+	if (it == pak->fileindex.end()) return 0;
+	if (pak->file)
+	{
+		fseek(pak->file, pak->lumps[it->second].filepos, 0);
+		fread(data, pak->lumps[it->second].size, 1, pak->file);
+	}
+	else
+	{
+		MemReader reader(pak->membuffer,pak->memsize);
+		reader.Seek(pak->lumps[it->second].filepos);
+		reader.Read(data, pak->lumps[it->second].size);
+	}
+	char c[5];
+	c[4] = 0;
+	memcpy(c, data, 4);
+	std::string ss = std::string(c);
+
+	return 1;
+}
+
 int GetPackageFileName(HLDirectoryItem* item, wchar_t* path, int maxsize)
 {
 	return 0;
 }
-
-
 
 int GetPackageFileType(HLDirectoryItem* item)
 {
@@ -293,8 +453,24 @@ int CountPackageFolderFiles(HLDirectoryItem* item)
 	return hlFolderGetFolderCount(item, false) + hlFolderGetFileCount(item, false);
 }
 
-int LoadDir(Package* pak, wchar_t* path, int types)
+int LoadDir(Package* pak, wchar_t* cpath, int types)
 {
+	std::wstring path = std::wstring(cpath);
+	if (pak->isquakewad)
+	{
+		return QLoadDir(pak, cpath, types);
+	}
+
+	printf(String(path + std::wstring(L"\n")).c_str());
+
+	if (pak->quakesubpackages.find(path) != pak->quakesubpackages.end())
+	{
+		wchar_t wc = 0;
+		auto r = QLoadDir(pak->quakesubpackages[path], &wc, types);
+		pak->loadedfiles = pak->quakesubpackages[path]->loadedfiles;
+		return r;
+	}
+
 	hlBindPackage(pak->hlpak);
 
 	bool findfiles = ((1 & types) != 0);
@@ -318,6 +494,25 @@ int LoadDir(Package* pak, wchar_t* path, int types)
 	std::string file;
 	char cp[4096];
 	pak->loadedfiles.clear();
+
+	//Maybe this is an old Quake WAD file...
+	if (count == 0 and ExtractExt(cpath) == L"wad")
+	{
+		auto sz = FileSize(pak,cpath);
+		void* mem = malloc(sz);
+		if (ReadStream(pak, cpath, mem, sz) == 1)
+		{
+			auto qpak = QReadPackage(cpath, mem, sz);
+			qpak->membuffer = mem;
+			pak->memsize = sz;
+			pak->quakesubpackages[path] = qpak;
+		}
+		else
+		{
+			free(mem);
+		}
+	}
+
 	for (int n = 0; n < count; ++n)
 	{
 		auto subitem = hlFolderGetItem(item, n);
@@ -340,6 +535,8 @@ int LoadDir(Package* pak, wchar_t* path, int types)
 
 int FileType(Package* pak, wchar_t* path)
 {
+	if (pak->isquakewad) return QFileType(pak, path);
+
 	auto s = GMFSDK::String(path);
 	std::string ext;
 	std::string name;
@@ -366,6 +563,14 @@ int FileType(Package* pak, wchar_t* path)
 
 uint64_t FileSize(Package* pak, wchar_t* path)
 {
+	if (pak->isquakewad) return QFileSize(pak, path);
+	auto dir = ExtractDir(std::wstring(path));
+	if (pak->quakesubpackages.find(dir) != pak->quakesubpackages.end())
+	{
+		auto file = StripDir(std::wstring(path));
+		return QFileSize(pak->quakesubpackages[dir], (wchar_t*)file.c_str());
+	}
+
 	auto s = GMFSDK::String(path);
 	hlBindPackage(pak->hlpak);
 	auto root = hlPackageGetRoot();
@@ -378,6 +583,7 @@ uint64_t FileSize(Package* pak, wchar_t* path)
 
 wchar_t* GetLoadedFile(Package* pak, const int index)
 {
+	if (pak->isquakewad) return QGetLoadedFile(pak, index);
 	return (wchar_t*)pak->loadedfiles[index].c_str();
 }
 
@@ -398,6 +604,15 @@ uint64_t GetPackageFileSize(HLDirectoryItem* item)
 
 int ReadStream(Package* pak, wchar_t* path, void* data, uint64_t sz)
 {
+	if (pak->isquakewad) return QReadStream(pak, path, data, sz);
+
+	auto dir = ExtractDir(std::wstring(path));
+	if (pak->quakesubpackages.find(dir) != pak->quakesubpackages.end())
+	{
+		auto s = StripDir(std::wstring(path));
+		return QReadStream(pak->quakesubpackages[dir], (wchar_t*)s.c_str(), data, sz);
+	}
+
 	auto s = GMFSDK::String(path);
 	hlBindPackage(pak->hlpak);
 	auto root = hlPackageGetRoot();
@@ -455,6 +670,8 @@ int ReadStream(Package* pak, wchar_t* path, void* data, uint64_t sz)
 void FreePackage(Package* pak)
 {
 	hlDeletePackage(pak->hlpak);
+	if (pak->file != NULL) fclose(pak->file);
 	pak->hlpak = 0;
+	if (pak->membuffer != NULL) free(pak->membuffer);
 	delete pak;
 }
