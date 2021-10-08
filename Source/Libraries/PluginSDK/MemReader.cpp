@@ -20,8 +20,28 @@ namespace GMFSDK
 		return size;
 	}
 
+	std::string MemReader::ReadLine(const uint64_t maxlength)
+	{
+		auto maxl = std::max(maxlength, Size() - Pos());
+		std::vector<char> s;
+		char c;
+		while (true)
+		{
+			Read(&c, 1);
+			if (c == 0 || c == 10 || c == 13) break;
+			s.push_back(c);
+			if (maxl != 0)
+			{
+				if (s.size() == maxl) break;
+			}
+		}
+		s.push_back(0);
+		return std::string(&s[0]);
+	}
+
 	std::string MemReader::ReadString(const uint64_t maxlength)
 	{
+		auto maxl = std::max(maxlength, Size() - Pos());
 		std::vector<char> s;
 		char c;
 		while (true)
@@ -29,9 +49,9 @@ namespace GMFSDK
 			Read(&c, 1);
 			if (c == 0) break;
 			s.push_back(c);
-			if (maxlength != 0)
+			if (maxl != 0)
 			{
-				if (s.size() == maxlength) break;
+				if (s.size() == maxl) break;
 			}
 		}
 		s.push_back(0);
@@ -45,6 +65,7 @@ namespace GMFSDK
 
 	std::wstring MemReader::ReadWString(const uint64_t maxlength)
 	{
+		auto maxl = std::max(maxlength, Size() - Pos());
 		std::vector<wchar_t> s;
 		wchar_t c;
 		_ASSERT(sizeof(wchar_t) == 2);
@@ -53,9 +74,9 @@ namespace GMFSDK
 			Read(&c, 2);
 			if (c == 0) break;
 			s.push_back(c);
-			if (maxlength != 0)
+			if (maxl != 0)
 			{
-				if (s.size() == maxlength) break;
+				if (s.size() == maxl) break;
 			}
 		}
 		s.push_back(0);

@@ -408,7 +408,12 @@ namespace GMFSDK
 
 			auto tex = new GMFTexture(this);
 			tex->path = reader->ReadWString();
-
+			reader->Read(&tex->datasize);
+			if (tex->datasize != 0)
+			{
+				tex->data = malloc(tex->datasize);
+				reader->Read(tex->data, tex->datasize);
+			}
 			reader->Seek(start + sz);
 		}
 
@@ -419,16 +424,23 @@ namespace GMFSDK
 			start = reader->Pos();
 			reader->Read(&sz);
 
-			auto mtl = new GMFMaterial(this, GMF_LIGHTING_PBR);
-
-			int tex_count;
-			reader->Read(&tex_count);
-
-			_ASSERT(tex_count == 16);
-			for (int i = 0; i < tex_count; ++i)
+			auto mtl = new GMFMaterial(this);
+			mtl->path = reader->ReadWString();
+			reader->Read(&mtl->datasize);
+			if (mtl->datasize != 0)
 			{
-				reader->Read(&mtl->textures[i]);
+				mtl->data = malloc(mtl->datasize);
+				reader->Read(mtl->data, mtl->datasize);
 			}
+
+			//int tex_count;
+			//reader->Read(&tex_count);
+
+			//_ASSERT(tex_count == 16);
+			//for (int i = 0; i < tex_count; ++i)
+			//{
+			//	reader->Read(&mtl->textures[i]);
+			//}
 
 			reader->Seek(start + sz);
 		}
@@ -772,32 +784,39 @@ namespace GMFSDK
 		uint64_t start = writer->Pos();
 		writer->Seek(start + sizeof(uint64_t));
 
-		int i = GMF_MAX_TEXTURES;
-		writer->Write(&i);
-		writer->Write(&textures[0], GMF_MAX_TEXTURES * sizeof(textures[0]));
+		writer->Write(path);
+		writer->Write(&datasize);
+		if (data != NULL)
+		{
+			writer->Write(data, datasize);
+		}
 
-		float f=1;
+		//int i = GMF_MAX_TEXTURES;
+		//writer->Write(&i);
+		//writer->Write(&textures[0], GMF_MAX_TEXTURES * sizeof(textures[0]));
+
+		//float f=1;
 
 		//Flags
-		writer->Write(&flags);
+		//writer->Write(&flags);
 
 		//Base color
-		writer->Write(&f);
-		writer->Write(&f);
-		writer->Write(&f);
-		writer->Write(&f);
+		//writer->Write(&f);
+		//writer->Write(&f);
+		//writer->Write(&f);
+		//writer->Write(&f);
 
 		//Emission
-		writer->Write(&f);
-		writer->Write(&f);
-		writer->Write(&f);
+		//writer->Write(&f);
+		//writer->Write(&f);
+		//writer->Write(&f);
 
 		//Metal / roughness
-		writer->Write(&f);
-		writer->Write(&f);
+		//writer->Write(&f);
+		//writer->Write(&f);
 
 		//Normal scale
-		writer->Write(&f);
+		/*writer->Write(&f);
 
 		//Displacement
 		writer->Write(&f);
@@ -812,7 +831,7 @@ namespace GMFSDK
 		//Texture scroll
 		writer->Write(&f);
 		writer->Write(&f);
-		writer->Write(&f);
+		writer->Write(&f);*/
 
 		uint64_t end = writer->Pos();
 		uint64_t sz = end - start;
@@ -829,22 +848,11 @@ namespace GMFSDK
 		writer->Seek(start + sizeof(uint64_t));
 
 		writer->Write(path);
+		writer->Write(&datasize);
 
-		int i=0;
-
-		//Target
-		writer->Write(&i);
-
-		//Images
-		writer->Write(&i);
-
-		if ((GMF_SAVE_CLEANUP & flags) != 0)
+		if (data != NULL)
 		{
-			for (auto image : images)
-			{
-				delete image;
-			}
-			images.clear();
+			writer->Write(data, datasize);
 		}
 
 		uint64_t end = writer->Pos();
@@ -914,17 +922,20 @@ namespace GMFSDK
 
 	GMFTexture::GMFTexture(GMFFile* file)
 	{
+		data = NULL;
+		datasize = 0;
 		file->textures.push_back(this);
 		index = file->textures.size();
 	}
 	
 	GMFTexture::~GMFTexture()
 	{
-		for (auto image : images)
+		/*for (auto image : images)
 		{
 			delete image;
-		}
-		images.clear();
+		}*/
+		if (data != NULL) free(data);
+		//images.clear();
 	}
 
 	void GMFNode::SetColor(const float r, const float g, const float b, const float a)
@@ -989,19 +1000,26 @@ namespace GMFSDK
 		index = file->nodes.size();
 	}
 
-	GMFMaterial::GMFMaterial(GMFFile* file, const GMFLightingModel lightingmodel) : index(-1)
+	GMFMaterial::GMFMaterial(GMFFile* file) : index(-1)
 	{
-		this->lightingmodel = lightingmodel;
-		flags = 0;
+		datasize = 0;
+		data = NULL;
+		//this->lightingmodel = lightingmodel;
+		//flags = 0;
 		file->materials.push_back(this);
 		index = file->materials.size();
-		for (int n = 0; n < GMF_MAX_TEXTURES; ++n)
-		{
-			textures[n] = 0;
-		}
+		//for (int n = 0; n < GMF_MAX_TEXTURES; ++n)
+		//{
+		//	textures[n] = 0;
+		//}
 	}
 
-	void GMFMaterial::SetTexture(GMFTexture* texture, const int index)
+	GMFMaterial::~GMFMaterial()
+	{
+		if (data) free(data);
+	}
+
+	/*void GMFMaterial::SetTexture(GMFTexture* texture, const int index)
 	{
 		if (texture == NULL)
 		{
@@ -1011,7 +1029,7 @@ namespace GMFSDK
 		{
 			this->textures[index] = texture->index;
 		}
-	}
+	}*/
 
 	GMFVertex::GMFVertex() : tangent{0,0,0,0}, position { 0.0f, 0.0f, 0.0f }, normal{ 0,0,0 }, /*color{ 255,255,255,255 },*/ boneindices{ 0,0,0,0 }, boneweights{ 0,0,0,0 }, displacement(127)
 	{

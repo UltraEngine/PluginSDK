@@ -209,10 +209,12 @@ namespace GMFSDK
 	{
 	public:
 		int index;
-		int format;
-		int size[3];
-		std::vector<GMFImage*> images;
+		//int format;
+		//int size[3];
+		//std::vector<GMFImage*> images;
 		std::wstring path;
+		void* data;
+		uint64_t datasize;
 
 		GMFTexture(GMFFile* file);
 		~GMFTexture();
@@ -223,15 +225,20 @@ namespace GMFSDK
 	class GMFMaterial
 	{
 	public:
+		std::wstring path;
+		std::string text;
+		void* data;
+		uint64_t datasize;
 		int index;
-		int flags;
-		GMFLightingModel lightingmodel;
-		std::wstring texturefile[GMF_MAX_TEXTURES];
-		int textures[GMF_MAX_TEXTURES];
+		//int flags;
+		//GMFLightingModel lightingmodel;
+		//std::wstring texturefile[GMF_MAX_TEXTURES];
+		//int textures[GMF_MAX_TEXTURES];
 
-		GMFMaterial(GMFFile* file, const GMFLightingModel lightingmodel);
+		GMFMaterial(GMFFile* file);
+		~GMFMaterial();
 
-		void SetTexture(GMFTexture* texture, const int index);
+		//void SetTexture(GMFTexture* texture, const int index);
 		bool Save(MemWriter* writer, const int flags);
 	};
 

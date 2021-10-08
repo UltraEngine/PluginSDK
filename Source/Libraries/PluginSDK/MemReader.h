@@ -29,6 +29,7 @@ namespace GMFSDK
 		virtual void Read(void* dest, uint64_t length);
 		virtual std::string ReadString(const uint64_t maxlength=0);
 		virtual std::wstring ReadWString(const uint64_t maxlength=0);
+		virtual std::string ReadLine(const uint64_t maxlength=0);
 
 		template <typename T>
 		void Read(T* info)
