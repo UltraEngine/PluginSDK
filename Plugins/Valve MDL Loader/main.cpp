@@ -64,7 +64,7 @@ int GetPluginInfo(unsigned char* cs, int maxsize)
 	std::string s =
 		"{\"plugin\":{"
 		"\"title\":\"Valve Model Loader\","
-		"\"description\":\"Load Source Engine model files.\","
+		"\"description\":\"Load Source Engine MDL files.\","
 		"\"author\":\"Josh Klint\","
 		"\"threadSafe\":true,"
 		"\"loadModelExtensions\":[\"mdl\"]"
@@ -78,7 +78,7 @@ void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uin
 {
 	//Reader object
 	MemReader reader(data, size);
-	
+
 	studiohdr_t header = {};
 	if (size < sizeof(header)) return NULL;
 
@@ -176,7 +176,7 @@ void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uin
 			vxtreader.Read(&modelheader);
 			if (modelheader.numLODs == 0) continue;
 			vxtreader.Seek(modeloffset + modelheader.lodOffset);
-			for (int n3 = 0; n3 < min(1,modelheader.numLODs); n3++)
+			for (int n3 = 0; n3 < min(1, modelheader.numLODs); n3++)
 			{
 				auto lodoffset = modeloffset + modelheader.lodOffset + n3 * sizeof(vtxModelLODHeader_t);
 				vxtreader.Seek(lodoffset);
@@ -204,8 +204,8 @@ void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uin
 			}
 		}
 	}
-	
-	out:
+
+out:
 	FreeBuffer(buffer);
 
 	//------------------------------------------------------------------------
@@ -263,15 +263,15 @@ void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uin
 				reader.Read<int>(&materialtype);
 				reader.Read<int>(&materialparam);
 				reader.Read<int>(&meshid);
-				reader.Read(&center,12);
+				reader.Read(&center, 12);
 			}
 		}
 	}
-	
+
 	//------------------------------------------------------------------------
 	// Construct the data structure to return
 	//------------------------------------------------------------------------	
-	
+
 	auto file = new GMFFile();
 	auto root = new GMFNode(file, GMF_TYPE_MODEL);
 	auto glod = root->AddLOD();
