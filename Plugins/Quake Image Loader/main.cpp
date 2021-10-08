@@ -32,11 +32,12 @@ int GetPluginInfo(unsigned char* cs, int maxsize)
 	std::string s =
 		"{"
 		"\"plugin\":{"
-		"\"description\":\"Load Quake images from .lmp files.\","
+		"\"description\":\"Load Quake images from .spr and .lmp files.\","
 		"\"author\":\"Josh Klint\","
+		"\"threadSafe\":true,"
 		"\"title\":\"Quake Image Loader\","
-		"\"loadTextureExtensions\":[\"lmp\"],"
-		"\"loadTextureFilters\": [\"Quake Image Files (*.lmp):lmp\"]"
+		"\"loadTextureExtensions\":[\"lmp\",\"\",\"spr\"],"
+		"\"loadTextureFilters\": [\"Quake Image Files (*.lmp):lmp\",\"Quake Sprite Files (*.spr):spr\"]"
 		"}"
 		"}";
 	if (s.length() < maxsize) maxsize = s.length();
@@ -94,25 +95,115 @@ void FreeContext(void* pcontext)
 	delete context;
 }
 
-void* LoadTexture(void* pcontext, void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsize)
+#define IDSPRITEHEADER	(('P'<<24)+('S'<<16)+('D'<<8)+'I')
+
+//https://www.gamers.org/dEngine/quake/spec/quake-spec31.html#CSPR0
+//https://github.com/id-Software/Quake/blob/bf4ac424ce754894ac8f1dae6a3981954bc9852d/QW/client/spritegn.h
+
+void* LoadTextureSPR(Context* context, void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsize)
 {
-	auto context = (Context*)pcontext;
+	spr_t header;
+	if (size < sizeof(spr_t)) return NULL;
+
+	MemReader r(data, size);
+	r.Read(&header);
+
+	if (header.id != IDSPRITEHEADER) return NULL;
+	if (header.ver1 != 1) return NULL;
+	//if (header.ver12 != 1 and header.ver12 != 2) return NULL;
+	picture pic;
+
+	for (int n = 0; n < header.nframes; ++n)
+	{
+		long marker, npics;
+		r.Read(&marker);
+		if (marker == 0)
+		{
+			r.Read(&pic);
+				
+			int sz = pic.width * pic.height; 
+			context->mem = malloc(sz * 4);
+			unsigned char index;
+			int n = 0; int rgb;
+			unsigned char c[3];
+			c[0] = 255; c[1] = 0; c[2] = 0;
+			memcpy(&rgb, &c[0], 3);
+			unsigned char a = 255;
+
+			for (int x = 0; x < pic.width; ++x)
+			{
+				for (int y = 0; y < pic.height; ++y)
+				{
+					r.Read(&index);
+					rgb = qpallete[index];
+					memcpy(((unsigned char*)context->mem) + n * 4, &rgb, 3);
+					a = 255;
+					if (index == 0xFF) a = 0;// transparency
+					memcpy(((unsigned char*)context->mem) + n * 4 + 3, &a, 1);
+					n++;
+				}
+			}
+			sz *= 4;
+			TextureInfo texinfo;
+			texinfo.version = 201;
+			texinfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+			texinfo.target = 2;
+			texinfo.width = pic.width;
+			texinfo.height = pic.height;
+			texinfo.faces = 1;
+			texinfo.mipmaps = 1;
+			texinfo.depth = 1;
+			texinfo.frames = 1;
+
+			context->writer = new MemWriter;
+			context->writer->Write(&texinfo);
+			context->writer->Write(&sz);
+			context->writer->Write(&context->mem, sizeof(void*));
+
+			returnsize = context->writer->Size();
+			return context->writer->data();
+		}
+		else
+		{
+			return NULL;
+			r.Read(&npics);
+			r.Seek(r.Pos() + npics * sizeof(float));
+			for (int i = 0; i < npics; ++i)
+			{
+				r.Read(&pic);
+			}
+		}
+	}
+
+	return NULL;
+}
+
+void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsize)
+{
+	auto result = LoadTextureSPR(context, data, size, cpath, returnsize);
+	if (result != NULL) return result;
 
 	if (size <= 8) return NULL;
 	std::wstring path = std::wstring(cpath);
 	wstring name = GMFSDK::StripDir(path);
 
+	auto ext = Lower(ExtractExt(path));
+	if (!path.empty() and ext != L"lmp" and !ext.empty()) return NULL;
+
 	if (path.size() < 4) return NULL;
 	{
 		if (path[path.size() - 4] != '.' or path[path.size() - 3] != 'l' or path[path.size() - 2] != 'm' or path[path.size() - 1] != 'p')
 		{
-			return NULL;
+//			return NULL;
 		}
 	}
-
+	 
 	MemReader reader(data, size);
 	int w, h, sz;
 	
+	TextureInfo texinfo;
+	texinfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+
 	if (name == L"palette.lmp" and size == 16 * 16 * 3)
 	{
 		w = 16;
@@ -121,10 +212,12 @@ void* LoadTexture(void* pcontext, void* data, uint64_t size, wchar_t* cpath, uin
 
 		context->mem = malloc(sz);
 		memcpy(context->mem, data, sz);
+
+		texinfo.format = VK_FORMAT_B8G8R8_UNORM;
 	}
 	else
 	{
-		if ((name == L"colormap.lmp" and size == 16385))
+		if (/*name == L"colormap.lmp" and*/ size == 16385 or size == 16384)
 		{
 			w = 256;
 			h = 64;
@@ -142,12 +235,13 @@ void* LoadTexture(void* pcontext, void* data, uint64_t size, wchar_t* cpath, uin
 		}
 
 		sz = w * h;
-		context->mem = malloc(sz * 3);
+		context->mem = malloc(sz * 4);
 		unsigned char index;
 		int n = 0; int rgb;
 		unsigned char c[3];
 		c[0] = 255; c[1] = 0; c[2] = 0;
 		memcpy(&rgb, &c[0], 3);
+		unsigned char a;
 
 		for (int x = 0; x < w; ++x)
 		{
@@ -155,16 +249,17 @@ void* LoadTexture(void* pcontext, void* data, uint64_t size, wchar_t* cpath, uin
 			{
 				reader.Read(&index);
 				rgb = qpallete[index];
-				memcpy(((unsigned char*)context->mem) + n * 3, &rgb, 3);
+				memcpy(((unsigned char*)context->mem) + n * 4, &rgb, 3);
+				a = 255;
+				if (index == 0xFF) a = 0; // transparency
+				memcpy(((unsigned char*)context->mem) + n * 4 + 3, &a, 1);
 				n++;
 			}
 		}
-		sz *= 3;
+		sz *= 4;
 	}
 
-	TextureInfo texinfo;
 	texinfo.version = 201;
-	texinfo.format = VK_FORMAT_B8G8R8_UNORM;
 	texinfo.target = 2;
 	texinfo.width = w;
 	texinfo.height = h;

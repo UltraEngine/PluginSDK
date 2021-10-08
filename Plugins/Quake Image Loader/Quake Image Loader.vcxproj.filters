@@ -27,16 +27,22 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\Libraries\PluginSDK\MemReader.cpp">
+    <ClCompile Include="..\..\PluginSDK\GMFSDK.cpp">
       <Filter>Source Files\PluginSDK</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\Libraries\PluginSDK\MemWriter.cpp">
+    <ClCompile Include="..\..\PluginSDK\MemReader.cpp">
       <Filter>Source Files\PluginSDK</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\Libraries\PluginSDK\TextureInfo.cpp">
+    <ClCompile Include="..\..\PluginSDK\MemWriter.cpp">
       <Filter>Source Files\PluginSDK</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\Libraries\PluginSDK\Utilities.cpp">
+    <ClCompile Include="..\..\PluginSDK\TextureInfo.cpp">
+      <Filter>Source Files\PluginSDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PluginSDK\Utilities.cpp">
+      <Filter>Source Files\PluginSDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PluginSDK\half\half.cpp">
       <Filter>Source Files\PluginSDK</Filter>
     </ClCompile>
   </ItemGroup>
