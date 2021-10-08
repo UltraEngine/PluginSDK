@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PluginSDK\GMFSDK.cpp">
+      <Filter>Source\SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PluginSDK\MemReader.cpp">
+      <Filter>Source\SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PluginSDK\MemWriter.cpp">
+      <Filter>Source\SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PluginSDK\TextureInfo.cpp">
+      <Filter>Source\SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PluginSDK\Utilities.cpp">
+      <Filter>Source\SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PluginSDK\half\half.cpp">
+      <Filter>Source\SDK</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DLLExports.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HLLib\HLLib.h">
+      <Filter>Header Files\HLLib</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{c1dee24e-23e4-4c87-b9d4-67000166be00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{94b7c42d-b0d7-4849-a2a7-7adaf879c789}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\HLLib">
+      <UniqueIdentifier>{5fc563ed-29c6-4d94-890e-da4daf0379e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SDK">
+      <UniqueIdentifier>{3ca89f4c-9418-4e37-bd2c-e977aae72c4b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
