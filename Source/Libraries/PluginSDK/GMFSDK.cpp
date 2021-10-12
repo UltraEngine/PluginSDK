@@ -385,6 +385,9 @@ namespace GMFSDK
 			break;
 		}
 
+		std::string j3 = reader->ReadString();
+		if (!j3.empty()) properties = nlohmann::json::parse(j3.data());
+
 		uint64_t nodecount, nodepos, texcount, texpos, mtlcount, mtlpos, meshpos, meshcount;
 
 		reader->Read(&texcount);
@@ -612,11 +615,11 @@ namespace GMFSDK
 
 	bool GMFFile::Save(MemWriter* writer, const int flags)
 	{
-		//if (root <= 0) return false;
-
 		std::string s = "GMF2";
 		writer->Write((void*)s.c_str(), 4);
 		writer->Write(&version);
+
+		writer->Write(properties.dump('	'));
 
 		uint64_t tex_count = textures.size();
 		writer->Write(&tex_count);

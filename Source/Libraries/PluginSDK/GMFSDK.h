@@ -12,6 +12,7 @@
 	#include <assert.h>
 	#define _ASSERT assert
 #endif
+#include "json.hpp"
 #include "MemWriter.h"
 #include "MemReader.h"
 #include "half/half.h"
@@ -20,6 +21,8 @@
 	#include <Rpc.h>
 #endif
 #include <algorithm>
+
+using namespace nlohmann;
 
 namespace GMFSDK
 {
@@ -215,6 +218,7 @@ namespace GMFSDK
 		std::wstring path;
 		void* data;
 		uint64_t datasize;
+		nlohmann::json properties;
 
 		GMFTexture(GMFFile* file);
 		~GMFTexture();
@@ -234,6 +238,7 @@ namespace GMFSDK
 		//GMFLightingModel lightingmodel;
 		//std::wstring texturefile[GMF_MAX_TEXTURES];
 		//int textures[GMF_MAX_TEXTURES];
+		nlohmann::json properties;
 
 		GMFMaterial(GMFFile* file);
 		~GMFMaterial();
@@ -302,6 +307,7 @@ namespace GMFSDK
 		double scale[3];
 		double matrix[16];
 		float color[4];
+		nlohmann::json properties;
 
 		std::wstring name;
 		GMFdAABB bounds;
@@ -333,6 +339,7 @@ namespace GMFSDK
 		std::vector<GMFMaterial*> materials;
 		std::vector<GMFMesh*> meshes;
 		std::vector<GMFNode*> nodes;
+		nlohmann::json properties;
 
 		GMFFile();
 		~GMFFile();
