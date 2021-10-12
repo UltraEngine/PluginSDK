@@ -53,19 +53,19 @@
     <ClInclude Include="MDLStructs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\PluginSDK\GMFFile.h">
+    <ClInclude Include="..\SDK\GMFFile.h">
       <Filter>Header Files\GMFSDK</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\PluginSDK\MemReader.h">
+    <ClInclude Include="..\SDK\MemReader.h">
       <Filter>Header Files\GMFSDK</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\PluginSDK\MemWriter.h">
+    <ClInclude Include="..\SDK\MemWriter.h">
       <Filter>Header Files\GMFSDK</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\PluginSDK\Utilities.h">
+    <ClInclude Include="..\SDK\Utilities.h">
       <Filter>Header Files\GMFSDK</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\PluginSDK\GMFSDK.h">
+    <ClInclude Include="..\SDK\GMFSDK.h">
       <Filter>Header Files\GMFSDK</Filter>
     </ClInclude>
   </ItemGroup>
