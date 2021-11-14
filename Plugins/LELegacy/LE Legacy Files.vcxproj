@@ -29,26 +29,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -135,11 +135,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Source\Libraries\PluginSDK\MemReader.cpp" />
-    <ClCompile Include="..\..\Source\Libraries\PluginSDK\MemWriter.cpp" />
-    <ClCompile Include="..\..\Source\Libraries\PluginSDK\TextureInfo.cpp" />
-    <ClCompile Include="..\..\Source\Libraries\PluginSDK\Utilities.cpp" />
+    <ClCompile Include="..\..\PluginSDK\GMFSDK.cpp" />
+    <ClCompile Include="..\..\PluginSDK\half\half.cpp" />
+    <ClCompile Include="..\..\PluginSDK\MemReader.cpp" />
+    <ClCompile Include="..\..\PluginSDK\MemWriter.cpp" />
+    <ClCompile Include="..\..\PluginSDK\TextureInfo.cpp" />
+    <ClCompile Include="..\..\PluginSDK\Utilities.cpp" />
+    <ClCompile Include="Chunk.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="s3tc.cpp" />
+    <ClCompile Include="stb_dxt.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SDK\MemWriter.h" />
