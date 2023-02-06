@@ -1,7 +1,7 @@
-#include "../../Source/Libraries/PluginSDK/GMFSDK.h"
+#include "../../PluginSDK/PluginSDK.h"
 #include "DLLExports.h"
 
-using namespace GMFSDK;
+using namespace UltraEngine::PluginSDK;
 
 Context::Context() : writer(NULL) {}
 
@@ -60,19 +60,40 @@ Context* CreateContext()
 //Returns all plugin information in a JSON string
 int GetPluginInfo(unsigned char* cs, int maxsize)
 {
+	//std::string s = "{\"plugin\":{\"title\":\"FreeImage Texture Loader\",\"description\":\"Load textures from common image file formats.\",\"author\":\"Josh Klint\",\"threadSafe\":true,\"loadTextureExtensions\":[{\"extension\":\"exr\",\"description\":\"OpenEXR\"},{\"extension\":\"bmp\",\"description\":\"Windows Bitmap\"},{\"extension\":\"jpg\",\"description\":\"JPEG\"},{\"extension\":\"png\",\"description\":\"Portable Network Graphics\"},{\"extension\":\"tga\",\"description\":\"Truvision Targa\"},{\"extension\":\"gif\",\"description\":\"Graphics Interchange Format\"},{\"extension\":\"pcx\",\"description\":\"Picture Exchange Format\"},{\"extension\":\"psd\",\"description\":\"Adobe Photoshop\"}],\"SaveTextureExtensions\":[{\"extension\":\"exr\",\"description\":\"OpenEXR\"},{\"extension\":\"bmp\",\"description\":\"Windows Bitmap\"},{\"extension\":\"jpg\",\"description\":\"JPEG\"},{\"extension\":\"png\",\"description\":\"Portable Network Graphics\"},{\"extension\":\"tga\",\"description\":\"Truvision Targa\"},{\"extension\":\"gif\",\"description\":\"Graphics Interchange Format\"},{\"extension\":\"pcx\",\"description\":\"Picture Exchange Format\"},{\"extension\":\"psd\",\"description\":\"Adobe Photoshop\"}]}}";
+
 	std::string s =
 	"{"
 		"\"plugin\":{"
-			"\"title\":\"FreeImage texture loader.\","
+			"\"title\":\"FreeImage Texture Loader\","
 			"\"description\":\"Load textures from common image file formats.\","
 			"\"author\":\"Josh Klint\","
 			"\"threadSafe\":true,"
-			"\"url\":\"www.turboengine.com\","
-			"\"extension\": [\"bmp\",\"jpg\",\"jpeg\",\"tga\",\"pcx\",\"tga\",\"gif\"],"
-			"\"saveextensions\": [\"bmp\",\"jpg\",\"jpeg\",\"tga\",\"tga\"],"
-			"\"filter\": [\"Portable Network Graphics (*.png):png\",\"Windows Bitmap (*bmp):bmp\"]"
+			"\"loadTextureExtensions\":["
+				"{\"extension\":\"exr\",\"description\":\"OpenEXR\"},"
+				"{\"extension\":\"bmp\",\"description\":\"Windows Bitmap\"},"
+				"{\"extension\":\"jpg\",\"description\":\"JPEG\"},"
+				"{\"extension\":\"jp2\",\"description\":\"JPEG 2000\"},"
+				"{\"extension\":\"png\",\"description\":\"Portable Network Graphics\"},"
+				"{\"extension\":\"tga\",\"description\":\"Truvision Targa\"},"
+				"{\"extension\":\"gif\",\"description\":\"Graphics Interchange Format\"},"
+				"{\"extension\":\"pcx\",\"description\":\"Picture Exchange Format\"},"
+				"{\"extension\":\"tiff\",\"description\":\"Tagged Image File Format\"},"
+				"{\"extension\":\"psd\",\"description\":\"Adobe Photoshop\"}]"
+			",\"saveTextureExtensions\":["
+				"{\"extension\":\"exr\",\"description\":\"OpenEXR\"},"
+				"{\"extension\":\"bmp\",\"description\":\"Windows Bitmap\"},"
+				"{\"extension\":\"jpg\",\"description\":\"JPEG\"},"
+				"{\"extension\":\"jp2\",\"description\":\"JPEG 2000\"},"
+				"{\"extension\":\"png\",\"description\":\"Portable Network Graphics\"},"
+				"{\"extension\":\"tga\",\"description\":\"Truvision Targa\"},"
+				"{\"extension\":\"gif\",\"description\":\"Graphics Interchange Format\"},"
+				"{\"extension\":\"pcx\",\"description\":\"Picture Exchange Format\"},"
+				"{\"extension\":\"tiff\",\"description\":\"Tagged Image File Format\"},"
+				"{\"extension\":\"psd\",\"description\":\"Adobe Photoshop\"}]"
 		"}"
 	"}";
+	//OutputDebugString(s.c_str());
 #ifdef _WIN32
 	if (maxsize > 0) memcpy(cs, s.c_str(), min(maxsize,s.length() ) );
 #else
@@ -115,6 +136,8 @@ void* SaveTexture(Context* context, wchar_t* extension, const int type, const in
 	if (ext == L"psd") fiformat = FIF_PSD;
 	if (ext == L"png") fiformat = FIF_PNG;
 	if (ext == L"tga") fiformat = FIF_TARGA;
+	if (ext == L"tiff") fiformat = FIF_TIFF;
+	if (ext == L"jp2") fiformat = FIF_JP2;
 	if (ext == L"jpg" or extension == L"jpeg") fiformat = FIF_JPEG;
 
 	if (fiformat == FIF_UNKNOWN) return NULL;
@@ -149,11 +172,21 @@ void* SaveTexture(Context* context, wchar_t* extension, const int type, const in
 	}
 
 	FIBITMAP* bitmap = FreeImage_ConvertFromRawBits((BYTE*)mipchain[0], width, height, width * bpp, bpp * 8, rmask, gmask, bmask, TRUE);
+	if (bitmap == NULL) return NULL;
+
 	FIMEMORY* mem = FreeImage_OpenMemory();
+
+	if (fiformat == FIF_JPEG and bpp == 4)
+	{
+		auto bitmap2 = FreeImage_ConvertTo24Bits(bitmap);
+		FreeImage_Unload(bitmap);
+		bitmap = bitmap2;
+		if (bitmap == NULL) return NULL;
+	}
 
 	//FreeImage_FlipVertical(bitmap);
 
-	if (FreeImage_SaveToMemory(fiformat,bitmap, mem, 0) == 0)
+	if (!FreeImage_SaveToMemory(fiformat,bitmap, mem, 0))
 	{
 		FreeImage_Unload(bitmap);
 		FreeImage_CloseMemory(mem);
@@ -192,6 +225,7 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 	bool istga = false;//no file header for this format
 	bool isico = false;
 	bool ispcx = false;
+	bool isjp2 = false;
 
 	//PNG check
 	pos = memreader.Pos();
@@ -249,7 +283,7 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 		char n[11];
 		memreader.Read(&n[0],10);
 		n[10] = 0;
-		if (n == "#?RADIANCE") ishdr = true;
+		if (strcmp(n, "#?RADIANCE")==0) ishdr = true;
 	}
 	memreader.Seek(pos);
 
@@ -260,7 +294,7 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 		char n[3];
 		n[2] = 0;
 		memreader.Read(&n[0],2);
-		if (n == "BM") isbmp = true;
+		if (strcmp(n,"BM") == 0) isbmp = true;
 	}
 	memreader.Seek(pos);
 
@@ -271,7 +305,7 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 		char n[5];
 		n[4] = 0;
 		memreader.Read(&n[0], 4);
-		if (n == "8BPS") ispsd = true;
+		if (strcmp(n, "8BPS")==0) ispsd = true;
 	}
 	memreader.Seek(pos);
 
@@ -282,16 +316,16 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 		char n[4];
 		n[3] = 0;
 		memreader.Read(&n[0], 3);
-		if (n == "GIF") isgif = true;
+		if (strcmp(n, "GIF")==0) isgif = true;
 	}
 	memreader.Seek(pos);
 
-	//JPG check
+	//JPG check - not reliable
 	pos = memreader.Pos();
 	if (memreader.Size() - pos >= 2)
 	{
 		unsigned short tag;
-		memreader.Read(&tag);
+		memreader.Read(&tag,2);
 		if (tag == 55551) isjpeg = true;
 	}
 	memreader.Seek(pos);
@@ -305,7 +339,7 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 		if (tag == 20000630) isexr = true;
 	}
 	memreader.Seek(pos);
-
+	 
 	//TIF check
 	pos = memreader.Pos();
 	if (memreader.Size() - pos >= 4)
@@ -315,6 +349,26 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 		if (tag == 2771273)
 		{
 			istiff = true;
+		}
+	}
+	memreader.Seek(pos);
+
+	//JP2 check
+	if (memreader.Size() - pos >= 24)
+	{
+		uint64_t tag;
+		memreader.Read(&tag);
+		if (tag == 2314938624866516992)
+		{
+			memreader.Read(&tag);
+			if (tag == 1441151880935180813)
+			{
+				memreader.Read(&tag);
+				if (tag == 2320040360505078886)
+				{
+					isjp2 = true;
+				}
+			}
 		}
 	}
 	memreader.Seek(pos);
@@ -350,7 +404,11 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 	}
 	memreader.Seek(pos);
 
-	if (ispng == false and isbmp == false and ishdr == false and isjpeg == false and istiff == false and ispsd == false and isexr == false and ispcx == false and isico == false and isgif == false and istga == false) return NULL;
+	if (isjp2 == false and ispng == false and isbmp == false and ishdr == false and isjpeg == false and istiff == false and ispsd == false and isexr == false and ispcx == false and isico == false and isgif == false and istga == false)
+	{
+		//isjpeg = true;
+		return NULL;
+	}
 
 	FIMEMORY* mem = FreeImage_OpenMemory((BYTE*)data, size);
 	FIBITMAP* bitmap = nullptr;
@@ -363,6 +421,10 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 	else if (isbmp)
 	{
 		bitmap = FreeImage_LoadFromMemory(FIF_BMP, mem, BMP_DEFAULT);
+	}
+	else if (isjp2)
+	{
+		bitmap = FreeImage_LoadFromMemory(FIF_JP2, mem, JP2_DEFAULT);
 	}
 	else if (ishdr)
 	{
@@ -402,14 +464,14 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 	}
 
 	FreeImage_CloseMemory(mem);
-	if (bitmap == nullptr) return NULL;
+	if (bitmap == NULL) return NULL;
 
-	GMFSDK::TextureInfo texinfo;
+	UltraEngine::PluginSDK::TextureInfo texinfo;
 
 	//bool compressed = false;//(TEXTURE_COMPRESSED & flags) != 0;
 
 	int bpp = FreeImage_GetBPP(bitmap);
-
+	
 	switch (bpp)
 	{
 		//case 8:
@@ -436,7 +498,11 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 		//if (compressed) format = TEXTURE_COMPRESSED_RGBA;
 		break;
 	case 48:
-		texinfo.format = VK_FORMAT_R16G16B16_UNORM;
+		oldbitmap = bitmap;
+		bitmap = FreeImage_ConvertToRGBA16(bitmap);
+		FreeImage_Unload(oldbitmap);
+		texinfo.format = VK_FORMAT_R16G16B16A16_UNORM;
+		bpp = FreeImage_GetBPP(bitmap);
 		//format = TEXTURE_RGB16F;
 		break;
 	case 64:
@@ -470,9 +536,24 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 
 	FreeImage_FlipVertical(bitmap);
 
+	texinfo.filter = 1;
 	texinfo.width = FreeImage_GetWidth(bitmap);
 	texinfo.height = FreeImage_GetHeight(bitmap);
-	
+	texinfo.genmipmaps = 1;
+
+	int pow2sizes[18] = { 1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072 };
+	bool pow2x = false, pow2y = false;
+	for (int n = 0; n < 18; ++n)
+	{
+		if (pow2sizes[n] == texinfo.width) pow2x = true;
+		if (pow2sizes[n] == texinfo.height) pow2y = true;
+		if (pow2x == true and pow2y == true)
+		{
+			texinfo.genmipmaps = 1;
+			break;
+		}
+	}
+
 	//Calculate mipmap count
 	if (Pow2(texinfo.width) == texinfo.width and Pow2(texinfo.height) == texinfo.height)
 	{
@@ -487,7 +568,7 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 	}
 
 	//Save data in transfer format
-	context->writer = new MemWriter;
+	context->writer = new UltraEngine::PluginSDK::MemWriter;
 
 	/*TextureInfo texinfo;
 	texinfo.width = width;
@@ -514,11 +595,11 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 
 	auto pitch = FreeImage_GetPitch(bitmap);
 
-	//uint64_t length = bpp * width * height;
+	int length = bpp * texinfo.width * texinfo.height;
 	//writer->Write(&width);
 	//writer->Write(&height);
 	//writer->Write(&depth);
-	//writer->Write(&length);
+	context->writer->Write(&length);
 	auto pixels = FreeImage_GetBits(bitmap);
 	context->writer->Write(&pixels,sizeof(void*));
 	context->loadeddata.push_back(bitmap);
@@ -549,11 +630,11 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 			context->loadeddata.push_back(newbitmap);
 			bitmap = newbitmap;
 			bpp = FreeImage_GetBPP(bitmap) / 8;
-			//length = bpp * texinfo.width * texinfo.height;
+			int length = bpp * texinfo.width * texinfo.height;
 			//writer->Write(&width);
 			//writer->Write(&height);
 			//writer->Write(&depth);
-			//writer->Write(&length);
+			context->writer->Write(&length);
 			pixels = FreeImage_GetBits(bitmap);
 			context->writer->Write(&pixels, sizeof(void*));
 			/*mipinfo.width = width;

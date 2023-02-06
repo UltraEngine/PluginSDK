@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
-#include "../../Source/Libraries/PluginSDK/GMFSDK.h"
-#include "../../Source/Libraries/PluginSDK/TextureInfo.h"
+#include "../../PluginSDK/PluginSDK.h"
+#include "../../PluginSDK/TextureInfo.h"
 
 #ifdef _WIN32
 	#ifdef _WIN64
@@ -30,7 +30,7 @@
 
 struct Context
 {
-	GMFSDK::MemWriter* writer;
+	UltraEngine::PluginSDK::MemWriter* writer;
 	std::vector<FIBITMAP*> loadeddata;
 	std::vector<FIMEMORY*> loadedmem;
 
