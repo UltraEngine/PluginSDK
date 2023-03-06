@@ -10,7 +10,7 @@
 	#define _ASSERT assert
 #endif
 
-namespace GMFSDK
+namespace UltraEngine::PluginSDK
 {
 	class MemReader
 	{

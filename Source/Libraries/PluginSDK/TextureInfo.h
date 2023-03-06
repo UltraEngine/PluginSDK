@@ -1,6 +1,6 @@
 #pragma once
 
-namespace GMFSDK
+namespace UltraEngine::PluginSDK
 {
     struct TextureInfo
     {
@@ -15,6 +15,7 @@ namespace GMFSDK
         int clampu, clampv, clampw;
         int frames;
         int filter;
+        int genmipmaps;
         int swizzle_red_alpha;
 
         TextureInfo();

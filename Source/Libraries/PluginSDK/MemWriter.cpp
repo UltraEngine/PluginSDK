@@ -1,12 +1,20 @@
 #include "MemWriter.h"
 
-namespace GMFSDK
+namespace UltraEngine::PluginSDK
 {
-	MemWriter::MemWriter() : pos(0), capacity(0), size(0), mem(NULL) {}
+	MemWriter::MemWriter() : owner(true), pos(0), capacity(0), size(0), mem(NULL) {}
+
+	MemWriter::MemWriter(void* data, uint64_t sz) : pos(0), capacity(0), size(0), mem(NULL)
+	{
+		mem = data;
+		size = sz;
+		capacity = sz;
+		owner = false;
+	}
 
 	MemWriter::~MemWriter()
 	{
-		if (mem != NULL)
+		if (mem != NULL and owner == true)
 		{
 			free(mem);
 			mem = NULL;
@@ -30,6 +38,7 @@ namespace GMFSDK
 
 	void MemWriter::Resize(uint64_t size)
 	{
+		if (not owner) return throw("This writer cannot be resized");;
 		if (size == 0)
 		{
 			this->size = 0;
@@ -53,7 +62,7 @@ namespace GMFSDK
 		{
 			mem = realloc(mem, this->capacity);
 		}
-		if (mem == nullptr) throw("Failed to allocate memory.");
+		if (mem == nullptr) throw("Failed to allocate memory");
 	}
 
 	uint64_t MemWriter::Size()
@@ -83,7 +92,7 @@ namespace GMFSDK
 	void MemWriter::Write(void* src, uint64_t length)
 	{
 		if (length == 0) return;
-		if (pos + length >= size) Resize(pos + length);
+		if (pos + length > size) Resize(pos + length);
 		memcpy(((char*)mem) + pos, src, length);
 		pos += length;
 	}

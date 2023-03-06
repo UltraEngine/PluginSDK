@@ -12,7 +12,7 @@
 #include <codecvt>
 #include <sstream>
 
-namespace GMFSDK
+namespace UltraEngine::PluginSDK
 {
 	extern std::wstring Lower(const std::wstring& s);
 	extern std::string Lower(const std::string& s);
@@ -28,7 +28,13 @@ namespace GMFSDK
 	extern std::wstring StripAll(const std::wstring& path);
 	extern std::wstring WString(const std::string& s);
 	extern std::string Right(const std::string& s, const int length);
+	extern std::wstring Right(const std::wstring& s, const int length);
 	extern std::string Left(const std::string& s, const int length);
+	extern std::wstring Left(const std::wstring& s, const int length);
 	extern int Find(const std::string& s, const std::string& token);
 	extern std::string Replace(const std::string& s, const std::string& from, const std::string& to);
+	extern std::vector<std::string> Split(std::string s, const std::string& sep_);
+	extern std::vector<std::wstring> Split(std::wstring s, const std::wstring& sep_);
+	extern std::string Trim(std::string s);
+	extern int Pow2(const int f);
 }

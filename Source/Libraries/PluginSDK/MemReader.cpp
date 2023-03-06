@@ -1,6 +1,6 @@
 #include "MemReader.h"
 
-namespace GMFSDK
+namespace UltraEngine::PluginSDK
 {
 	MemReader::MemReader(void* mem, uint64_t size) : pos(0)
 	{

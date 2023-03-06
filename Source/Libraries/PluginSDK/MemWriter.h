@@ -4,7 +4,7 @@
 #include <string.h>
 #include <string>
 
-namespace GMFSDK
+namespace UltraEngine::PluginSDK
 {
 	class MemWriter
 	{
@@ -12,9 +12,11 @@ namespace GMFSDK
 		uint64_t size;
 		uint64_t pos;
 		uint64_t capacity;
+		bool owner;
 	public:
 
 		MemWriter();
+		MemWriter(void* data, uint64_t sz);
 		~MemWriter();
 
 		virtual void LoseMem();

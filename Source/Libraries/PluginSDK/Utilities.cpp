@@ -1,6 +1,6 @@
 #include "Utilities.h"
 
-namespace GMFSDK
+namespace UltraEngine::PluginSDK
 {
 	std::wstring ExtractDir(const std::wstring& path)
 	{
@@ -20,11 +20,32 @@ namespace GMFSDK
 		return s.substr((l - ll), ll);
 	}
 
+	std::wstring Right(const std::wstring& s, const int length)
+	{
+		int l = s.length();
+		int ll = length;
+		if (ll > l) ll = l;
+		if (length < 1) return L"";
+		if (l <= 0) return L"";
+		if (l == ll) return s;
+		return s.substr((l - ll), ll);
+	}
+
 	std::string Left(const std::string& s, const int length)
 	{
 		unsigned int l = length;
 		if (length < 1) return "";
 		if (s.length() == 0) return "";
+		if (l > s.length()) l = s.length();
+		if (l == s.length()) return s;
+		return s.substr(0, l);
+	}
+
+	std::wstring Left(const std::wstring& s, const int length)
+	{
+		unsigned int l = length;
+		if (length < 1) return L"";
+		if (s.length() == 0) return L"";
 		if (l > s.length()) l = s.length();
 		if (l == s.length()) return s;
 		return s.substr(0, l);
@@ -175,5 +196,139 @@ namespace GMFSDK
 		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
 		return converter.from_bytes(s);
 #endif
+	}
+
+	std::vector<std::string> Split(std::string s, const std::string& sep_)
+	{
+		auto sep = sep_;
+		if (sep == "")
+		{
+			s = Replace(s, "	", " ");
+			while (s.find("  ") != std::string::npos)
+			{
+				s = Replace(s, "  ", " ");
+			}
+			sep = std::string(" ");
+		}
+		std::string ns = s;
+		std::string sub = s;
+		int p = 0;
+		std::vector<std::string> sarr;
+		while (true)
+		{
+			p = ns.find(sep, p);
+			if (p > 0)
+			{
+				sub = Left(ns, p);
+				if (sub != "")
+				{
+					sarr.push_back(sub);
+					p += sep.length();
+				}
+				else
+				{
+					return sarr;
+				}
+			}
+			else
+			{
+				if (p == 0)
+				{
+					p += sep.length();
+					sarr.push_back("");
+					signed int sz = s.length();
+					if (p >= sz - 1) return sarr;
+				}
+				else
+				{
+					if (ns != "")
+					{
+						sarr.push_back(ns);
+					}
+					return sarr;
+				}
+			}
+			ns = Right(ns, ns.length() - p);
+			p = 0;
+		}
+	}
+
+	std::vector<std::wstring> Split(std::wstring s, const std::wstring& sep_)
+	{
+		auto sep = sep_;
+		if (sep == L"")
+		{
+			s = Replace(s, L"	", L" ");
+			while (s.find(L"  ") != std::wstring::npos)
+			{
+				s = Replace(s, L"  ", L" ");
+			}
+			sep = std::wstring(L" ");
+		}
+		std::wstring ns = s;
+		std::wstring sub = s;
+		int p = 0;
+		std::vector<std::wstring> sarr;
+		while (true)
+		{
+			p = ns.find(sep, p);
+			if (p > 0)
+			{
+				sub = Left(ns, p);
+				if (sub != L"")
+				{
+					sarr.push_back(sub);
+					p += sep.length();
+				}
+				else
+				{
+					return sarr;
+				}
+			}
+			else
+			{
+				if (p == 0)
+				{
+					p += sep.length();
+					sarr.push_back(L"");
+					signed int sz = s.length();
+					if (p >= sz - 1) return sarr;
+				}
+				else
+				{
+					if (ns != L"")
+					{
+						sarr.push_back(ns);
+					}
+					return sarr;
+				}
+			}
+			ns = Right(ns, ns.length() - p);
+			p = 0;
+		}
+	}
+
+#ifdef max
+#undef max
+#undef min
+#endif
+
+	std::string Trim(std::string s)
+	{
+		s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int c) {return !std::isspace(std::max(c, 0)); }));
+		s.erase(std::find_if(s.rbegin(), s.rend(), [](int ch) { return !std::isspace(std::max(ch, 0)); }).base(), s.end());
+		return s;
+	}
+
+	int Round(const float f)
+	{
+		return int(roundf(f));
+	}
+
+	int Pow2(const int f)
+	{
+		int n;
+		n = Round(log2(float(f)));
+		return pow(2, n);
 	}
 }
