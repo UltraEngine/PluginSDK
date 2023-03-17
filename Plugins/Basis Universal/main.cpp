@@ -27,10 +27,20 @@ std::vector<void*> allocedmem;
 basis_compressor* compressor = NULL;
 //basist::etc1_global_selector_codebook* sel_codebook = nullptr;
 
+// Not happy with this hack but...
+// https://github.com/BinomialLLC/basis_universal/issues/346
+enum BasisFlags
+{
+	BASIS_ULTRA_USERDATA = 0x65CF4A80,//1708083840,
+	BASIS_NORMALMAP = 0x1,
+	BASIS_GRAYSCALE = 0x2
+};
+
 //DLL entry point function
 #ifdef _WIN32
 BOOL WINAPI DllMain(_In_ HINSTANCE hinstDLL, _In_ DWORD fdwReason, _In_ LPVOID lpvReserved)
 {
+	g_cpu_supports_sse41 = true;
 	switch (fdwReason)
 	{
 	case DLL_PROCESS_ATTACH:
@@ -70,11 +80,6 @@ void FreeContext(Context*)
 	allocedmem.clear();
 }
 
-enum
-{
-	BASIS_HINT_FORMAT = 7343343556
-};
-
 void* LoadTexture(Context*, void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsize)
 {
 	MemReader reader(data, size);
@@ -98,25 +103,6 @@ void* LoadTexture(Context*, void* data, uint64_t size, wchar_t* cpath, uint64_t&
 	
 	//Declare format
 	transcoder_texture_format format = transcoder_texture_format::cTFBC7_RGBA;
-
-	//Check userdata for format hint
-	/*uint32_t userdata0, userdata1;
-	transcoder->get_userdata(data, size, userdata0, userdata1);
-	if (userdata0 == BASIS_HINT_FORMAT)
-	{
-		transcoder_texture_format hintedformat = transcoder_texture_format(userdata1);
-		switch (hintedformat)
-		{
-		case transcoder_texture_format::cTFRGBA32:
-		case transcoder_texture_format::cTFBC1_RGB:
-		case transcoder_texture_format::cTFBC3_RGBA:
-		case transcoder_texture_format::cTFBC4_R:
-		case transcoder_texture_format::cTFBC5_RG:
-		case transcoder_texture_format::cTFBC7_M5_RGBA:
-			format = hintedformat;
-			break;
-		}
-	}*/
 	
 	TextureInfo texinfo;
 	texinfo.version = 201;
@@ -151,6 +137,17 @@ void* LoadTexture(Context*, void* data, uint64_t size, wchar_t* cpath, uint64_t&
 
 	basisu_file_info fileinfo = {};
 	transcoder->get_file_info(data, size, fileinfo);
+	if (fileinfo.m_userdata0 == BASIS_ULTRA_USERDATA)
+	{
+		if ((fileinfo.m_userdata1 & BASIS_NORMALMAP) != 0)
+		{
+			format = transcoder_texture_format::cTFBC5;
+		}
+		else if ((fileinfo.m_userdata1 & BASIS_GRAYSCALE) != 0)
+		{
+			format = transcoder_texture_format::cTFBC4;
+		}
+	}
 
 	if (imageInfo.m_alpha_flag)
 	{
@@ -203,12 +200,26 @@ void* LoadTexture(Context*, void* data, uint64_t size, wchar_t* cpath, uint64_t&
 		break;
 	}
 
+	basist::basisu_image_info imageinfo;
+	for (int k = 0; k < imageCount; ++k)
+	{
+		transcoder->get_image_info(data, size, imageinfo, k);
+		if (k == 0)
+		{
+			texinfo.mipmaps = imageinfo.m_total_levels;
+		}
+		else
+		{
+			texinfo.mipmaps = min(uint32_t(texinfo.mipmaps), imageinfo.m_total_levels);
+		}
+	}
+
 	writer = new MemWriter;
 	writer->Write(&texinfo);
 
-	for (int miplevel = 0; miplevel < texinfo.mipmaps; miplevel++)
+	for (int k = 0; k < imageCount; ++k)
 	{
-		for (int k = 0; k < imageCount; ++k)
+		for (int miplevel = 0; miplevel < texinfo.mipmaps; miplevel++)
 		{
 			basist::basisu_image_level_info levelInfo;
 			transcoder->get_image_level_info(data, size, levelInfo, k, miplevel);
@@ -233,6 +244,9 @@ void* LoadTexture(Context*, void* data, uint64_t size, wchar_t* cpath, uint64_t&
 
 			void* levelData = malloc(sz);
 			allocedmem.push_back(levelData);
+
+			levelInfo.m_num_blocks_x;
+			levelInfo.m_width;
 
 			bool succ = transcoder->transcode_image_level(
 				data,
@@ -296,6 +310,7 @@ enum SaveFlags
 	SAVE_DEFAULT = 0,
 	SAVE_QUIET = 4,
 	SAVE_BUILD_MIPMAPS = 512,
+	SAVE_NORMALMAP = 1024,
 	SAVE_DUMP_INFO = 8192
 };
 
@@ -309,24 +324,32 @@ void* SaveTexture(Context*, wchar_t* extension, const int type, const int width,
 	if (wstring(extension) != L"basis") return nullptr;
 
 	//Copy image data
-	int w = width;
-	int h = height;
-	mipcount = 0;
-	for (int n = 0; n < mipcount_; ++n)
+	m_comp_params.m_source_mipmap_images.resize(layers);
+	for (int l = 0; l < layers; ++l)
 	{
-		++mipcount;
-		void* ptr = mipchain[n];
-		//image img = image(w, h);
-		m_comp_params.m_source_images.resize(m_comp_params.m_source_images.size() + 1);
-		auto& img = m_comp_params.m_source_images[m_comp_params.m_source_images.size() - 1];
-		img = image(w, h);
-		memcpy(img.get_ptr(), ptr, w * h * 4);
-		//m_comp_params.m_source_images.push_back(img);
-		w /= 2;
-		h /= 2;
-		if (w < 4 and h < 4) break;
-		w = max(4, w);
-		h = max(4, h);
+		int w = width;
+		int h = height;
+		mipcount = 0;
+		for (int n = 0; n < mipcount_; ++n)
+		{
+			++mipcount;
+			void* ptr = mipchain[n];
+			auto img = image(w, h);
+			memcpy(img.get_ptr(), ptr, w * h * 4);
+			if (n == 0)
+			{
+				m_comp_params.m_source_images.push_back(img);
+			}
+			else
+			{
+				m_comp_params.m_source_mipmap_images[l].push_back(img);
+			}
+			w /= 2;
+			h /= 2;
+			if (w < 4 and h < 4) break;
+			w = max(4, w);
+			h = max(4, h);
+		}
 	}
 
 	switch (type)
@@ -345,7 +368,8 @@ void* SaveTexture(Context*, wchar_t* extension, const int type, const int width,
 		break;
 	}
 
-	//Compressor parameters 
+	//Compressor parameters
+	m_comp_params.m_use_opencl = false;
 	m_comp_params.m_mip_gen = (SAVE_BUILD_MIPMAPS & flags) != 0;
 	m_comp_params.m_check_for_alpha = true;
 	m_comp_params.m_quality_level = 128;
@@ -361,13 +385,15 @@ void* SaveTexture(Context*, wchar_t* extension, const int type, const int width,
 	//m_comp_params.m_out_filename = "models/barrel/test.basis";
 
 	//Normal maps
-	const bool normalmap = false;
-	if (normalmap)
+	if ((flags & SAVE_NORMALMAP) != 0)
 	{
+		m_comp_params.m_userdata0 = BASIS_ULTRA_USERDATA;
+		m_comp_params.m_userdata1 |= BASIS_NORMALMAP;
 		m_comp_params.m_swizzle[0] = 0;
 		m_comp_params.m_swizzle[1] = 0;
 		m_comp_params.m_swizzle[2] = 0;
 		m_comp_params.m_swizzle[3] = 1;
+		m_comp_params.m_force_alpha = true;
 	}
 
 	//Create compressor
