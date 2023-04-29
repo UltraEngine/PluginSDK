@@ -52,20 +52,21 @@ void* LoadTextureSPR(Context* context, void* data, uint64_t size, wchar_t* cpath
 				}
 			}
 			sz *= 4;
+
 			TextureInfo texinfo;
 			texinfo.version = 201;
 			texinfo.format = VK_FORMAT_B8G8R8A8_UNORM;
-			texinfo.target = 2;
 			texinfo.width = pic.width;
 			texinfo.height = pic.height;
-			texinfo.faces = 1;
 			texinfo.mipmaps = 1;
-			texinfo.depth = 1;
-			texinfo.frames = 1;
-
-			context->writer.Write(&texinfo);
-			context->writer.Write(&sz);
-			context->writer.Write(&context->mem, sizeof(void*));
+			texinfo.mipchain.resize(1);
+			texinfo.mipchain[0].width = texinfo.width;
+			texinfo.mipchain[0].height = texinfo.height;
+			texinfo.mipchain[0].size = texinfo.width * texinfo.height * 4;
+			texinfo.mipchain[0].data = context->mem;
+			
+			context->writer.Write(&texinfo, texinfo.headersize);
+			context->writer.Write(texinfo.mipchain.data(), sizeof(texinfo.mipchain[0]) * texinfo.mipchain.size());
 
 			returnsize = context->writer.Size();
 			return context->writer.data();

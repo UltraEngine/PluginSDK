@@ -250,18 +250,45 @@ void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uin
 
 	for (int n = 0; n < skins.size(); ++n)
 	{
-		auto tex = new GMFTexture(file);
-		tex->path = L"skin" + WString(String(n));
-		tex->datasize = header.skinwidth * header.skinheight + 8;
-		tex->data = malloc(tex->datasize);
-		memcpy(tex->data, &header.skinwidth, 4);
-		memcpy((char*)tex->data + 4, &header.skinheight, 4);
-		memcpy((char*)tex->data + 8, skins[n].data(), header.skinwidth * header.skinheight);
+		//auto tex = new GMFTexture(file);
+		//tex->path = L"skin" + WString(String(n));
+		//tex->datasize = header.skinwidth * header.skinheight + 8;
+		//tex->data = malloc(tex->datasize);
+		//memcpy(tex->data, &header.skinwidth, 4);
+		//memcpy((char*)tex->data + 4, &header.skinheight, 4);
+		//memcpy((char*)tex->data + 8, skins[n].data(), header.skinwidth * header.skinheight);
+
+		TextureInfo texinfo;
+		texinfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+		texinfo.width = header.skinwidth;
+		texinfo.height = header.skinheight;
+		texinfo.mipmaps = 1;
+		texinfo.mipchain.resize(1);
+
+		texinfo.mipchain[0].width = header.skinwidth;
+		texinfo.mipchain[0].height = header.skinheight;
+		texinfo.mipchain[0].size = header.skinwidth * header.skinheight * 4;
+		auto data = malloc(header.skinwidth * header.skinheight * 4);;
+		texinfo.mipchain[0].data = data;
+		context->memblocks.push_back(data);
+		char rgba[4];
+		for (int k = 0; k < pixels.size(); ++k)
+		{
+			int color = qpallete[pixels[k]];
+			memcpy(&rgba[0], &color, 4);
+			rgba[3] = 255;
+			void* dst = (void*)(((const char*)data) + uint64_t(k * 4));
+			memcpy(dst, &rgba[0], 4);
+		}
+
+		//memcpy((char*)data, skins[n].data(), header.skinwidth * header.skinheight * 4);
+
+		file->AddTexture(texinfo);
 	}
 
 	auto mtl = new GMFMaterial(file);
 	mtl->text = "{\"material\":{"
-					"\"textures\":[0]"
+					"\"texture0\": 0"
 				"}}";
 	mtl->path = L"material0.json";
 	mtl->data = (void*)mtl->text.c_str();
@@ -288,9 +315,9 @@ void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uin
 				}
 			}
 		}
-		mesh->indices[t * 3 + 0] = triangles[t].vertex[0];
+		mesh->indices[t * 3 + 0] = triangles[t].vertex[2];
 		mesh->indices[t * 3 + 1] = triangles[t].vertex[1];
-		mesh->indices[t * 3 + 2] = triangles[t].vertex[2];
+		mesh->indices[t * 3 + 2] = triangles[t].vertex[0];
 	}
 
 	mesh->vertices.resize(vertices.size());
@@ -305,6 +332,8 @@ void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uin
 		mesh->vertices[v].normal.y = anorms[vertices[v].normalIndex * 3 + 2];
 		mesh->vertices[v].normal.z = anorms[vertices[v].normalIndex * 3 + 0];
 	}
+
+	mesh->SetMaterial(mtl);
 
 	int flags = 0;
 	file->Save(&context->writer,flags);

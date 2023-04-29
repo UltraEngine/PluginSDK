@@ -152,6 +152,11 @@ Context* CreateContext()
 void FreeContext(Context* ctx)
 {
 	if (ctx->mem) free(ctx->mem);
+	for (auto m : ctx->memblocks)
+	{
+		free(m);
+	}
+	ctx->memblocks.clear();
 	delete ctx;
 }
 

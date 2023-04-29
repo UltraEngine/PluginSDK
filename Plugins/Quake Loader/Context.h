@@ -8,6 +8,7 @@ struct Context
 {
 	Context();
 
+	std::vector<void*> memblocks;
 	std::wstring log;
 	void Print(const std::wstring& text)
 	{

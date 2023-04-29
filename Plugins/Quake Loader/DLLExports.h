@@ -59,4 +59,5 @@ extern "C"
 	DLLExport int PackageValid(wchar_t* path);
 	DLLExport Context* CreateContext();
 	DLLExport void FreeContext(Context* ctx);
+	DLLExport void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsize);
 }
