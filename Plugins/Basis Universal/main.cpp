@@ -105,8 +105,7 @@ void* LoadTexture(Context*, void* data, uint64_t size, wchar_t* cpath, uint64_t&
 	transcoder_texture_format format = transcoder_texture_format::cTFBC7_RGBA;
 	
 	TextureInfo texinfo;
-	texinfo.version = 201;
-
+	
 	switch (basisTextureType)
 	{
 	case cBASISTexType2D:
@@ -214,9 +213,6 @@ void* LoadTexture(Context*, void* data, uint64_t size, wchar_t* cpath, uint64_t&
 		}
 	}
 
-	writer = new MemWriter;
-	writer->Write(&texinfo);
-
 	for (int k = 0; k < imageCount; ++k)
 	{
 		for (int miplevel = 0; miplevel < texinfo.mipmaps; miplevel++)
@@ -263,10 +259,21 @@ void* LoadTexture(Context*, void* data, uint64_t size, wchar_t* cpath, uint64_t&
 				return nullptr;
 			}
 
-			writer->Write(&sz);
-			writer->Write(&levelData, sizeof(void*));
+			MipmapInfo mipinfo;
+			mipinfo.width = levelInfo.m_width;
+			mipinfo.height = levelInfo.m_height;
+			mipinfo.size = sz;
+			mipinfo.data = levelData;
+			texinfo.mipchain.push_back(mipinfo);
+			//writer->Write(&sz);
+			//writer->Write(&levelData, sizeof(void*));
 		}
 	}
+
+	writer = new MemWriter;
+	writer->Write(&texinfo, texinfo.headersize);
+	writer->Write(texinfo.mipchain.data(), sizeof(texinfo.mipchain[0])* texinfo.mipchain.size());
+
 	returnsize = writer->Size();
 	return writer->data();
 }
