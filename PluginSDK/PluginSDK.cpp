@@ -365,6 +365,11 @@ namespace UltraEngine::PluginSDK
 		return true;
 	}
 
+	void GMFFile::AddTexture(const TextureInfo& info)
+	{
+		textures.push_back(info);
+	}
+
 	bool GMFFile::Load(MemReader* reader, const std::wstring cachewritepath, const std::wstring cachereadpath, const int flags)
 	{
 		Reset();
@@ -405,20 +410,30 @@ namespace UltraEngine::PluginSDK
 
 		//Read textures
 		reader->Seek(texpos);
+		textures.reserve(texcount);
 		for (n = 0; n < texcount; ++n)
 		{
-			start = reader->Pos();
-			reader->Read(&sz);
+			TextureInfo texinfo;
+			reader->Read(&texinfo, TextureInfo::headersize);
+			MipmapInfo mipinfo;
+			texinfo.mipchain.resize(texinfo.mipmaps);
+			for (int n = 0; n < texinfo.mipmaps; ++n)
+			{
+				reader->Read(&texinfo.mipchain[n], sizeof(mipinfo));
+			}
+			textures.push_back(texinfo);
+			//start = reader->Pos();
+			//reader->Read(&sz);
 
-			auto tex = new GMFTexture(this);
+			/*auto tex = new GMFTexture(this);
 			tex->path = reader->ReadWString();
 			reader->Read(&tex->datasize);
 			if (tex->datasize != 0)
 			{
 				tex->data = malloc(tex->datasize);
 				reader->Read(tex->data, tex->datasize);
-			}
-			reader->Seek(start + sz);
+			}*/
+			//reader->Seek(start + sz);
 		}
 
 		//Read materials
@@ -644,9 +659,14 @@ namespace UltraEngine::PluginSDK
 
 		//Write textures
 		uint64_t tex_start = writer->Pos();
-		for (auto tex : textures)
+		for (int n = 0; n < textures.size(); ++n)
 		{
-			if (!tex->Save(writer, flags)) return false;
+			textures[n].version = 202;
+			writer->Write(&textures[n], TextureInfo::headersize);
+			for (int k = 0; k < textures[n].mipchain.size(); ++k)
+			{
+				writer->Write(&textures[n].mipchain[k]);
+			}
 		}
 
 		//Write materials
@@ -928,7 +948,7 @@ namespace UltraEngine::PluginSDK
 	{
 		data = NULL;
 		datasize = 0;
-		file->textures.push_back(this);
+	//	file->textures.push_back(this);
 		index = file->textures.size();
 	}
 	
@@ -1035,7 +1055,7 @@ namespace UltraEngine::PluginSDK
 		}
 	}*/
 
-	GMFVertex::GMFVertex() : tangent{0,0,0}, position { 0.0f, 0.0f, 0.0f }, normal{ 0,0,0 }, /*color{ 255,255,255,255 },*/ boneindices{ 0,0,0,0 }, boneweights{ 0,0,0,0 }, displacement(127)
+	GMFVertex::GMFVertex() : color{1.0f, 1.0f, 1.0f, 1.0f}, tessnormal{ 0,0,0 }, tangent{ 0,0,0 }, position{ 0.0f, 0.0f, 0.0f }, normal{ 0,0,0 }, /*color{ 255,255,255,255 },*/ boneindices{ 0,0,0,0 }, boneweights{ 0,0,0,0 }, displacement(127)
 	{
 		texcoords.x = 0.0f;
 		texcoords.y = 0.0f;
@@ -1071,7 +1091,7 @@ namespace UltraEngine::PluginSDK
 		}
 		for (auto tex : textures)
 		{
-			delete tex;
+			//delete tex;
 		}
 		nodes.clear();
 		meshes.clear();

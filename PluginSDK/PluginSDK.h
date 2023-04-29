@@ -189,13 +189,15 @@ namespace UltraEngine::PluginSDK
 	struct GMFVertex
 	{
 		GMFVec3 position;
-		GMFVec2 texcoords;
+		GMFVec4 color;
+		GMFVec4 texcoords;
 		GMFVec3 normal;
 		float displacement;
 		GMFVec3 tangent;
 		GMFVec3 bitangent;
 		GMFVec4 boneweights;
 		unsigned char boneindices[4];
+		GMFVec3 tessnormal;
 
 		GMFVertex();
 
@@ -336,7 +338,7 @@ namespace UltraEngine::PluginSDK
 	{
 	public:
 		int version;
-		std::vector<GMFTexture*> textures;
+		std::vector<TextureInfo> textures;
 		std::vector<GMFMaterial*> materials;
 		std::vector<GMFMesh*> meshes;
 		std::vector<GMFNode*> nodes;
@@ -345,6 +347,7 @@ namespace UltraEngine::PluginSDK
 		GMFFile();
 		~GMFFile();
 
+		void AddTexture(const TextureInfo& info);
 		void Reset();
 		bool Save(PluginSDK::MemWriter* writer, const int flags = 0);
 		bool Save(const std::string& path, const int flags = 0);
