@@ -61,8 +61,112 @@ Context* CreateContext()
 int GetPluginInfo(unsigned char* cs, int maxsize)
 {
 	//std::string s = "{\"plugin\":{\"title\":\"FreeImage Texture Loader\",\"description\":\"Load textures from common image file formats.\",\"author\":\"Josh Klint\",\"threadSafe\":true,\"loadTextureExtensions\":[{\"extension\":\"exr\",\"description\":\"OpenEXR\"},{\"extension\":\"bmp\",\"description\":\"Windows Bitmap\"},{\"extension\":\"jpg\",\"description\":\"JPEG\"},{\"extension\":\"png\",\"description\":\"Portable Network Graphics\"},{\"extension\":\"tga\",\"description\":\"Truvision Targa\"},{\"extension\":\"gif\",\"description\":\"Graphics Interchange Format\"},{\"extension\":\"pcx\",\"description\":\"Picture Exchange Format\"},{\"extension\":\"psd\",\"description\":\"Adobe Photoshop\"}],\"SaveTextureExtensions\":[{\"extension\":\"exr\",\"description\":\"OpenEXR\"},{\"extension\":\"bmp\",\"description\":\"Windows Bitmap\"},{\"extension\":\"jpg\",\"description\":\"JPEG\"},{\"extension\":\"png\",\"description\":\"Portable Network Graphics\"},{\"extension\":\"tga\",\"description\":\"Truvision Targa\"},{\"extension\":\"gif\",\"description\":\"Graphics Interchange Format\"},{\"extension\":\"pcx\",\"description\":\"Picture Exchange Format\"},{\"extension\":\"psd\",\"description\":\"Adobe Photoshop\"}]}}";
+	nlohmann::json j3;
+	j3["plugin"]["title"] = "FreeImage Texture Loader";
+	j3["plugin"]["description"] = "Load textures from common image file formats.";
+	j3["plugin"]["author"] = "Ultra Software";
+	j3["plugin"]["threadSafe"] = true;
+	j3["plugin"]["loadTextureExtensions"] = nlohmann::json::array();
 
-	std::string s =
+	nlohmann::json ext = nlohmann::json::object();
+
+	// Load extensions
+	ext["extension"] = "exr";
+	ext["description"] = "OpenEXR";
+	j3["plugin"]["loadTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "bmp";
+	ext["description"] = "Windows Bitmap";
+	j3["plugin"]["loadTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "jpg,jpeg";
+	ext["description"] = "JPEG";
+	j3["plugin"]["loadTextureExtensions"].push_back(ext);
+	
+	ext["extension"] = "jp2";
+	ext["description"] = "JPEG 2000";
+	j3["plugin"]["loadTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "png";
+	ext["description"] = "Portable Network Graphics";
+	j3["plugin"]["loadTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "tga";
+	ext["description"] = "Truevision Targa";
+	j3["plugin"]["loadTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "gif";
+	ext["description"] = "Graphics Interchange Format";
+	j3["plugin"]["loadTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "pcx";
+	ext["description"] = "Picture Exchange Format";
+	j3["plugin"]["loadTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "tif,tiff";
+	ext["description"] = "Tagged Image File Format";
+	j3["plugin"]["loadTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "psd";
+	ext["description"] = "Adobe Photoshop";
+	j3["plugin"]["loadTextureExtensions"].push_back(ext);
+
+	// Save extensions
+	ext["mipmaps"] = false;
+	ext["formats"] = nlohmann::json::array();
+	ext["formats"].push_back(VK_FORMAT_R8G8B8A8_UNORM);
+
+	ext["extension"] = "bmp";
+	ext["description"] = "Windows Bitmap";
+	j3["plugin"]["saveTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "jpg,jpeg";
+	ext["description"] = "JPEG";
+	j3["plugin"]["saveTextureExtensions"].push_back(ext);
+	
+	ext["extension"] = "tga";
+	ext["description"] = "Truevision Targa";
+	j3["plugin"]["saveTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "gif";
+	ext["description"] = "Graphics Interchange Format";
+	j3["plugin"]["saveTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "pcx";
+	ext["description"] = "Picture Exchange Format";
+	j3["plugin"]["saveTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "psd";
+	ext["description"] = "Adobe Photoshop";
+	j3["plugin"]["saveTextureExtensions"].push_back(ext);
+
+	//HDR formats
+	ext["formats"].push_back(VK_FORMAT_R16G16B16A16_UNORM);
+	ext["formats"].push_back(VK_FORMAT_R16G16B16_UNORM);
+	ext["formats"].push_back(VK_FORMAT_R16_UNORM);
+	ext["formats"].push_back(VK_FORMAT_R16G16B16A16_SFLOAT);
+	ext["formats"].push_back(VK_FORMAT_R16G16B16_SFLOAT);
+	ext["formats"].push_back(VK_FORMAT_R16_SFLOAT);
+
+	ext["extension"] = "jp2";
+	ext["description"] = "JPEG 2000";
+	j3["plugin"]["saveTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "png";
+	ext["description"] = "Portable Network Graphics";
+	j3["plugin"]["saveTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "tiff,tif";
+	ext["description"] = "Tagged Image File Format";
+	j3["plugin"]["saveTextureExtensions"].push_back(ext);
+
+	ext["extension"] = "exr";
+	ext["description"] = "OpenEXR";
+	j3["plugin"]["saveTextureExtensions"].push_back(ext);
+
+	std::string s = j3.dump(1, '	');
+
+	/*std::string s =
 	"{"
 		"\"plugin\":{"
 			"\"title\":\"FreeImage Texture Loader\","
@@ -72,7 +176,9 @@ int GetPluginInfo(unsigned char* cs, int maxsize)
 			"\"loadTextureExtensions\":["
 				"{\"extension\":\"exr\",\"description\":\"OpenEXR\"},"
 				"{\"extension\":\"bmp\",\"description\":\"Windows Bitmap\"},"
-				"{\"extension\":\"jpg\",\"description\":\"JPEG\"},"
+				"{\"extension\":\"jpg\","
+				"\"extensions\":\"JPEG\","
+				"\"description\":\"JPEG\"},"
 				"{\"extension\":\"jp2\",\"description\":\"JPEG 2000\"},"
 				"{\"extension\":\"png\",\"description\":\"Portable Network Graphics\"},"
 				"{\"extension\":\"tga\",\"description\":\"Truvision Targa\"},"
@@ -92,7 +198,7 @@ int GetPluginInfo(unsigned char* cs, int maxsize)
 				"{\"extension\":\"tiff\",\"description\":\"Tagged Image File Format\"},"
 				"{\"extension\":\"psd\",\"description\":\"Adobe Photoshop\"}]"
 		"}"
-	"}";
+	"}";*/
 	//OutputDebugString(s.c_str());
 #ifdef _WIN32
 	if (maxsize > 0) memcpy(cs, s.c_str(), min(maxsize,s.length() ) );
@@ -136,9 +242,9 @@ void* SaveTexture(Context* context, wchar_t* extension, const int type, const in
 	if (ext == L"psd") fiformat = FIF_PSD;
 	if (ext == L"png") fiformat = FIF_PNG;
 	if (ext == L"tga") fiformat = FIF_TARGA;
-	if (ext == L"tiff") fiformat = FIF_TIFF;
+	if (ext == L"tif") fiformat = FIF_TIFF;
 	if (ext == L"jp2") fiformat = FIF_JP2;
-	if (ext == L"jpg" or extension == L"jpeg") fiformat = FIF_JPEG;
+	if (ext == L"jpg" or ext == L"jpeg") fiformat = FIF_JPEG;
 
 	if (fiformat == FIF_UNKNOWN) return NULL;
 
@@ -161,10 +267,19 @@ void* SaveTexture(Context* context, wchar_t* extension, const int type, const in
 		bpp = 3;
 		break;
 	case VK_FORMAT_R16_UNORM:
-		rmask = 0x00ff0000;
+	case VK_FORMAT_R16_UINT:
+		rmask = 0x0000ffff;
 		gmask = 0x00000000;
 		bmask = 0x00000000;
 		bpp = 2;
+		break;
+	case VK_FORMAT_R32_UINT:
+	case VK_FORMAT_R32_SFLOAT:
+		rmask = 0xffffffff;
+		gmask = 0x00000000;
+		bmask = 0x00000000;
+		bpp = 4;
+		if (fiformat == FIF_TIFF) return NULL;
 		break;
 	default:
 		return NULL;
@@ -186,8 +301,9 @@ void* SaveTexture(Context* context, wchar_t* extension, const int type, const in
 
 	//FreeImage_FlipVertical(bitmap);
 
-	if (!FreeImage_SaveToMemory(fiformat,bitmap, mem, 0))
+	if (!FreeImage_SaveToMemory(fiformat, bitmap, mem, 0))
 	{
+		printf("errrr");
 		FreeImage_Unload(bitmap);
 		FreeImage_CloseMemory(mem);
 		return NULL;
@@ -539,7 +655,8 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 	texinfo.filter = 1;
 	texinfo.width = FreeImage_GetWidth(bitmap);
 	texinfo.height = FreeImage_GetHeight(bitmap);
-	texinfo.genmipmaps = 1;
+
+	if (Pow2(texinfo.width) == texinfo.width and Pow2(texinfo.height) == texinfo.height) texinfo.flags = 128;
 
 	int pow2sizes[18] = { 1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072 };
 	bool pow2x = false, pow2y = false;
@@ -549,7 +666,7 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 		if (pow2sizes[n] == texinfo.height) pow2y = true;
 		if (pow2x == true and pow2y == true)
 		{
-			texinfo.genmipmaps = 1;
+			texinfo.flags = 128;
 			break;
 		}
 	}
@@ -577,7 +694,7 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 	texinfo.format = format;
 	writer->Write(&texinfo, texinfo.ssize);*/
 
-	context->writer->Write(&texinfo);
+	context->writer->Write(&texinfo, texinfo.headersize);
 
 	/*writer->Write((void*)tag.c_str(), 4);
 	writer->Write(&version);
@@ -599,10 +716,17 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 	//writer->Write(&width);
 	//writer->Write(&height);
 	//writer->Write(&depth);
-	context->writer->Write(&length);
+	//context->writer->Write(&length);
 	auto pixels = FreeImage_GetBits(bitmap);
-	context->writer->Write(&pixels,sizeof(void*));
+	//context->writer->Write(&pixels,sizeof(void*));
 	context->loadeddata.push_back(bitmap);
+
+	MipmapInfo mipinfo;
+	mipinfo.width = texinfo.width;
+	mipinfo.height = texinfo.height;
+	mipinfo.size = length;
+	mipinfo.data = pixels;
+	texinfo.mipchain.push_back(mipinfo);
 
 	/*mipinfo.width = width;
 	mipinfo.height = height;
@@ -634,9 +758,16 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 			//writer->Write(&width);
 			//writer->Write(&height);
 			//writer->Write(&depth);
-			context->writer->Write(&length);
+			//context->writer->Write(&length);
 			pixels = FreeImage_GetBits(bitmap);
-			context->writer->Write(&pixels, sizeof(void*));
+			//context->writer->Write(&pixels, sizeof(void*));
+
+			mipinfo.width = texinfo.width;
+			mipinfo.height = texinfo.height;
+			mipinfo.size = length;
+			mipinfo.data = pixels;
+			texinfo.mipchain.push_back(mipinfo);
+
 			/*mipinfo.width = width;
 			mipinfo.height = height;
 			mipinfo.datasize = length;
@@ -644,6 +775,9 @@ void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, u
 			writer->Write(&mipinfo,mipinfo.ssize);*/
 		}
 	}
+
+	context->writer->Write(texinfo.mipchain.data(), sizeof(texinfo.mipchain[0]) * texinfo.mipchain.size());
+
 	size_out = context->writer->Size();
 	return context->writer->data();
 }
