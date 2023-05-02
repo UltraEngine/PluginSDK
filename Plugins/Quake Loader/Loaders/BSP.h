@@ -7,4 +7,4 @@
 #include "../VKFormat.h"
 
 extern Package* LoadPackageBSP(FILE* file);
-//extern Package* LoadPackageBSP(const wchar_t* cpath, void* mem, uint64_t sz);
+extern void* LoadModelBSP(Context* context, void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsize);

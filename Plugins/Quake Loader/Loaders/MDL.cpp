@@ -167,7 +167,7 @@ const float anorms[255 * 3] =
  -0.587785f, -0.425325f, -0.688191f ,
  -0.688191f, -0.587785f, -0.425325f };
 
-void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsize)
+void* LoadModelMDL(Context* context, void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsize)
 {
 	MemReader reader(data, size);
 	mdl_header_t header;
@@ -337,6 +337,7 @@ void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uin
 
 	int flags = 0;
 	file->Save(&context->writer,flags);
+	delete file;
 	returnsize = context->writer.Size();
 	return context->writer.data();
 }
