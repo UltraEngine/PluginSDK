@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>QuakeLoader</TargetName>
-    <OutDir>$(ProjectDir)</OutDir>
+    <OutDir>..\..\..\..\Users\joshk\Documents\Ultra Engine\Projects\Ultra Project\Plugins</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>QuakeLoader</TargetName>

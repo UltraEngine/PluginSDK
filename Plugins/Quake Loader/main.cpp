@@ -48,18 +48,15 @@ int GetPluginInfo(unsigned char* cs, int maxsize)
 	ext["extension"] = "bsp";
 	ext["description"] = "Quake BSP";
 	j3["plugin"]["loadPackageExtensions"].push_back(ext);
-	//j3["plugin"]["savePackageExtensions"].push_back(ext);
-
+	
 	ext["extension"] = "pak";
 	ext["description"] = "Quake Package";
 	j3["plugin"]["loadPackageExtensions"].push_back(ext);
-	//j3["plugin"]["savePackageExtensions"].push_back(ext);
-
+	
 	ext["extension"] = "wad";
 	ext["description"] = "Quake Texture WAD";
 	j3["plugin"]["loadPackageExtensions"].push_back(ext);
-	//j3["plugin"]["savePackageExtensions"].push_back(ext);
-
+	
 	//Texture formats
 	ext["extension"] = "spr";
 	ext["description"] = "Quake Sprite";
@@ -69,13 +66,27 @@ int GetPluginInfo(unsigned char* cs, int maxsize)
 	ext["description"] = "Quake Image";
 	j3["plugin"]["loadTextureExtensions"].push_back(ext);
 
+	//Model formats
 	ext["extension"] = "mdl";
 	ext["description"] = "Quake Model";
+	j3["plugin"]["loadModelExtensions"].push_back(ext);
+
+	ext["extension"] = "bsp";
+	ext["description"] = "Quake BSP";
 	j3["plugin"]["loadModelExtensions"].push_back(ext);
 
 	std::string s = j3.dump(1, '	');
 	if (maxsize > 0) memcpy(cs, s.c_str(), min(maxsize, s.length()));
 	return s.length();
+}
+
+void* LoadModel(Context* context, void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsize)
+{
+	auto result = LoadModelMDL(context, data, size, cpath, returnsize);
+	if (result != NULL) return result;
+	result = LoadModelBSP(context, data, size, cpath, returnsize);
+	if (result != NULL) return result;
+	return NULL;
 }
 
 void* LoadTexture(Context* context, void* data, uint64_t size, wchar_t* cpath, uint64_t& returnsize)

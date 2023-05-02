@@ -35,6 +35,69 @@ struct mdl_triangle_t
 	int vertex[3];   /* vertex indices */
 };
 
+//BSP Face
+// https://six-of-one.github.io/quake-specifications/
+typedef struct
+{
+	unsigned short plane_id;            // The plane in which the face lies
+	//           must be in [0,numplanes[ 
+	unsigned short side;                // 0 if in front of the plane, 1 if behind the plane
+	long ledge_id;               // first edge in the List of edges
+	//           must be in [0,numledges[
+	unsigned short ledge_num;           // number of edges in the List of edges
+	unsigned short texinfo_id;          // index of the Texture info the face is part of
+	//           must be in [0,numtexinfos[ 
+	unsigned char typelight;            // type of lighting, for the face
+	unsigned char baselight;            // from 0xFF (dark) to 0 (bright)
+	unsigned char light[2];             // two additional light models  
+	long lightmap;               // Pointer inside the general light map, or -1
+	// this define the start of the face light map
+} face_t;
+
+typedef struct                 // Mip Texture
+{
+	char   name[16];             // Name of the texture.
+	uint32_t width;                // width of picture, must be a multiple of 8
+	uint32_t height;               // height of picture, must be a multiple of 8
+	uint32_t offset1;              // offset to u_char Pix[width   * height]
+	uint32_t offset2;              // offset to u_char Pix[width/2 * height/2]
+	uint32_t offset4;              // offset to u_char Pix[width/4 * height/4]
+	uint32_t offset8;              // offset to u_char Pix[width/8 * height/8]
+} miptex_t;
+
+typedef struct
+{
+	unsigned short vertex0;             // index of the start vertex
+	//  must be in [0,numvertices[
+	unsigned short vertex1;             // index of the end vertex
+	//  must be in [0,numvertices[
+} edge_t;
+
+struct vec3_t
+{
+	float x, y, z;
+};
+
+typedef struct
+{
+	vec3_t   vectorS;            // S vector, horizontal in texture space)
+	float distS;              // horizontal offset in texture space
+	vec3_t   vectorT;            // T vector, vertical in texture space
+	float distT;              // vertical offset in texture space
+	unsigned int   texture_id;         // Index of Mip Texture
+	//           must be in [0,numtex[
+	unsigned int   animated;           // 0 for ordinary textures, 1 for water 
+} surface_t;
+
+typedef struct
+{
+	vec3_t normal;               // Vector orthogonal to plane (Nx,Ny,Nz)
+	// with Nx2+Ny2+Nz2 = 1
+	float dist;               // Offset to plane, along the normal vector.
+	// Distance from (0,0,0) to the plane
+	long    type;                // Type of plane, depending on normal vector.
+} plane_t;
+
 /* Texture coords */
 struct mdl_texcoord_t
 {
@@ -56,11 +119,6 @@ struct mdl_simpleframe_t
 	struct mdl_vertex_t bboxmax; /* bouding box max */
 	char name[16];
 	//struct mdl_vertex_t* verts;  /* vertex list of the frame */
-};
-
-struct vec3_t
-{
-	float x, y, z;
 };
 
 /* Group of simple frames */
