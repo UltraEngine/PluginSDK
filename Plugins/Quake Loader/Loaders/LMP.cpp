@@ -54,15 +54,23 @@ void* LoadTextureLMP(Context* context, void* data, uint64_t size, wchar_t* cpath
 		}
 		else
 		{
-			char name[16] = {};
-			reader.Read(&name[0], 16);
+			//char name[16] = {};
+			//reader.Read(&name[0], 16);
 			reader.Read(&w, 4);
 			reader.Read(&h, 4);
 
 			//Really sketchy...
 			if (size != w * h + 8 and size != w * h + 8 + 1)
 			{
-				//return NULL;
+				reader.Seek(0);
+				char name[16] = {};
+				reader.Read(&name[0], 16);
+				reader.Read(&w, 4);
+				reader.Read(&h, 4);
+				if (size != w * h + 8 and size != w * h + 8 + 1)
+				{
+					return NULL;
+				}
 			}
 		}
 
